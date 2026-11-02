@@ -7,4 +7,6 @@ npm install
 npm run dev      # dev server at http://localhost:4321
 npm run build    # static output in dist/
 npm run preview  # serves dist/ locally
+npm run lint     # astro check and ESLint
+npm test         # checks the built site, so run the build first
 ```

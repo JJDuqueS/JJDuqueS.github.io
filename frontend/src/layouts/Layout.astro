@@ -1,0 +1,57 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+	description: string;
+}
+
+const { title, description } = Astro.props;
+const fullTitle = `${title} · Juan Duque`;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const links = [
+	{ href: '/projects', label: 'Projects' },
+	{ href: '/about', label: 'About' },
+	{ href: '/#contact', label: 'Contact' },
+];
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{fullTitle}</title>
+		<meta name="description" content={description} />
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="Juan Duque" />
+		<meta property="og:title" content={fullTitle} />
+		<meta property="og:description" content={description} />
+		{Astro.site && <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />}
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	</head>
+	<body>
+		<a class="skip-link" href="#main">Skip to content</a>
+		<div class="page">
+			<header class="site-header">
+				<a class="site-name" href="/">Juan Duque</a>
+				<nav aria-label="Main">
+					<ul>
+						{
+							links.map(({ href, label }) => (
+								<li>
+									<a href={href} aria-current={path === href ? 'page' : undefined}>
+										{label}
+									</a>
+								</li>
+							))
+						}
+					</ul>
+				</nav>
+			</header>
+			<main id="main">
+				<slot />
+			</main>
+			<footer class="site-footer">Served from a 2014 laptop.</footer>
+		</div>
+	</body>
+</html>

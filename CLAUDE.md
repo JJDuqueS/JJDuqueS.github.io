@@ -21,8 +21,14 @@ Un portafolio personal en inglés (español opcional), estático y rápido, auto
 
 ## Páginas
 - Home: presentación, título "Software Engineer" con subtítulo de especialización, stack y contacto.
-- Projects: casos de estudio (problema, solución, stack, mi rol, resultado). Proyectos: Sunward (app React Native/Expo de posición del sol con sensores) y el propio portafolio; un tercero por definir. Sin enlaces a repositorios por ahora.
+- Projects: casos de estudio (problema, solución, stack, mi rol, resultado). Proyectos: Sunward (app React Native/Expo de posición del sol con sensores) y el propio portafolio; por ahora solo estos dos. Sin enlaces a repositorios por ahora.
 - About: la infraestructura del sitio, sus decisiones y trade-offs, alimentada por los ADRs del repositorio.
+
+## Estilo visual
+Editorial sobrio: la tipografía manda, mucho aire y un solo color de acento. Sin fuentes web.
+
+## Contacto en Home
+LinkedIn y correo. Sin CV por ahora.
 
 ## Formulario de contacto
 Validación con Pydantic, rate limiting, honeypot, guardar primero y notificar después (n8n o SMTP, pendiente), errores sin detalles internos, retención limitada.
@@ -31,7 +37,6 @@ Validación con Pydantic, rate limiting, honeypot, guardar primero y notificar d
 Demos en vivo, versión en español, modo oscuro, analítica, panel de edición, SSR y bases de datos servidor.
 
 ## Decisiones pendientes
-- Tercer proyecto destacado: pb-backend o el pipeline de envío de CV en n8n.
 - Notificación de contacto: SMTP directo desde FastAPI o n8n.
 - Dominio: nombre y extensión (`.dev` o `.com`), con DNS en Cloudflare.
 - Servicios que corren hoy en el servidor.

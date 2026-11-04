@@ -1,0 +1,43 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+
+const entries = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const projects = await Promise.all(
+	entries.map(async (entry) => ({ ...entry.data, Content: (await render(entry)).Content })),
+);
+---
+
+<Layout
+	title="Projects"
+	description="Case studies by Juan Duque: the problem, the solution, the stack, his role and the result."
+>
+	<h1>Projects</h1>
+	<p class="lead">What the problem was, what I built and how it turned out.</p>
+
+	<div style="margin-top: 4rem">
+		{
+			projects.map(({ title, summary, stack, role, result, Content }) => (
+				<article class="case">
+					<h2>{title}</h2>
+					<p>{summary}</p>
+					<Content />
+					<dl class="facts">
+						<div>
+							<dt class="label">Stack</dt>
+							<dd>{stack.join(', ')}</dd>
+						</div>
+						<div>
+							<dt class="label">My role</dt>
+							<dd>{role}</dd>
+						</div>
+						<div>
+							<dt class="label">Result</dt>
+							<dd>{result}</dd>
+						</div>
+					</dl>
+				</article>
+			))
+		}
+	</div>
+</Layout>

@@ -6,16 +6,17 @@ Actualiza este archivo cuando se cierre una decisión pendiente.
 Software Engineer con enfoque backend. Stack principal: Python (FastAPI) y React. Experiencia cloud en AWS y Azure. Busco roles remotos internacionales.
 
 ## Qué estamos construyendo
-Un portafolio personal en inglés (español opcional), estático y rápido, autoalojado en un laptop ASUS X200MA en mi casa: Celeron N2830 (x86_64), 2 GB de RAM, HDD de 500 GB, Ubuntu. La infraestructura del propio sitio es un caso de estudio central: la página About explica las decisiones de arquitectura con sus pros y contras.
+Un portafolio personal en inglés (español opcional), estático y rápido. Esquema híbrido (ADR 0002): el frontend se publica en GitHub Pages y la API corre en un laptop ASUS X200MA en mi casa: Celeron N2830 (x86_64), 2 GB de RAM, HDD de 500 GB, Ubuntu. La infraestructura del propio sitio es un caso de estudio central: la página About explica las decisiones de arquitectura con sus pros y contras.
 
 ## Arquitectura decidida
 - Frontend estático con Astro e islas de React (ADR 0001), con rutas prerenderizadas y metadatos Open Graph por página.
 - Contenido de proyectos en archivos versionados (Markdown/JSON), compilado en el build. No hay tabla `projects` ni `GET /api/projects`.
 - API FastAPI (un solo worker) con `GET /api/health` (incluye uptime, carga y RAM, sin datos sensibles) y `POST /api/contact`.
 - SQLite dedicado al portafolio, solo para mensajes de contacto. Directorio montado en Docker (modo WAL), migraciones, `busy_timeout`, backups con `.backup` o `VACUUM INTO`.
-- Caddy sirve los estáticos y reenvía `/api/*` a FastAPI.
-- Publicación con Cloudflare Tunnel y dominio propio; no se abren puertos en el router.
-- CI/CD: GitHub Actions ejecuta lint, tests y build, publica imágenes `linux/amd64` en GHCR, y el servidor las descarga. Nunca se compila en el servidor.
+- Frontend en GitHub Pages (ADR 0002): el repo se renombra a `JJDuqueS.github.io` para servir en la raíz (`https://jjduques.github.io`), sin `base`. Con dominio propio: `CNAME` en `frontend/public/` y cambiar `site`.
+- Enlaces internos siempre absolutos desde la raíz (`/about`); funcionan porque no hay `base`.
+- API en el laptop detrás de Caddy, expuesta con Cloudflare Tunnel en su propio hostname; necesita CORS para el origen del sitio. No se abren puertos en el router.
+- CI/CD: GitHub Actions ejecuta lint, tests y build; solo si pasan, el job `deploy` publica `frontend/dist` en GitHub Pages (solo desde `main`). Para la API: imágenes `linux/amd64` en GHCR que el servidor descarga. Nunca se compila en el servidor.
 - Docker Compose para desarrollo y producción.
 - Monitor de disponibilidad externo.
 
@@ -28,7 +29,10 @@ Un portafolio personal en inglés (español opcional), estático y rápido, auto
 Editorial sobrio: la tipografía manda, mucho aire y un solo color de acento. Sin fuentes web.
 
 ## Contacto en Home
-LinkedIn y correo. Sin CV por ahora.
+LinkedIn, correo y CV Backend en inglés (PDF en `frontend/public/cv/juan-duque-backend-cv.pdf`; el enlace solo aparece si el archivo existe). Foto opcional en `frontend/src/assets/portrait.jpg` (o .png/.webp); el hero la muestra solo si existe.
+
+## Experiencia
+Vive en `frontend/src/content/experience.json` y sale del CV Backend. No inventar empresas, cargos ni fechas: si el CV no lo dice, no va.
 
 ## Formulario de contacto
 Validación con Pydantic, rate limiting, honeypot, guardar primero y notificar después (n8n o SMTP, pendiente), errores sin detalles internos, retención limitada.
@@ -38,7 +42,7 @@ Demos en vivo, versión en español, modo oscuro, analítica, panel de edición,
 
 ## Decisiones pendientes
 - Notificación de contacto: SMTP directo desde FastAPI o n8n.
-- Dominio: nombre y extensión (`.dev` o `.com`), con DNS en Cloudflare.
+- Dominio: nombre y extensión (`.dev` o `.com`), con DNS en Cloudflare. No bloquea el MVP: el sitio funciona en `jjduques.github.io`.
 - Servicios que corren hoy en el servidor.
 
 ## Independencia del proyecto

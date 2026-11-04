@@ -121,14 +121,6 @@ h3 {
 	line-height: 1.4;
 }
 
-.hook {
-	margin: 3rem 0 0;
-	padding-left: 1.25rem;
-	border-left: 3px solid var(--accent);
-	font-size: 1.35rem;
-	line-height: 1.4;
-}
-
 .label {
 	color: var(--quiet);
 	font-family: var(--sans);
@@ -194,8 +186,160 @@ h3 {
 	font-size: 0.85rem;
 }
 
+/* Home: hero */
+
+.hero {
+	display: grid;
+	gap: 1.75rem;
+}
+
+.portrait {
+	width: 8rem;
+	height: auto;
+	aspect-ratio: 4 / 5;
+	object-fit: cover;
+	border-radius: 2px;
+}
+
+.bio {
+	margin: 1.5rem 0 0;
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1.5rem;
+	margin: 1.5rem 0 0;
+	padding: 0;
+	list-style: none;
+	font-family: var(--sans);
+	font-size: 1rem;
+	font-weight: 600;
+}
+
+/* Home: how this page reached you */
+
+.trace {
+	margin-top: 4rem;
+	padding: 1.75rem 0 0;
+	border-top: 1px solid var(--rule);
+}
+
+.trace h2 {
+	margin: 0 0 1.25rem;
+	font-size: 1.2rem;
+}
+
+.trace-bar {
+	display: flex;
+	gap: 2px;
+	height: 1.1rem;
+	transform-origin: left;
+}
+
+.trace-bar:empty {
+	display: none;
+}
+
+.trace-bar.is-drawn {
+	animation: trace-draw 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes trace-draw {
+	from {
+		transform: scaleX(0);
+	}
+}
+
+.segment {
+	min-width: 3px;
+	background: var(--rule);
+}
+
+.segment.is-server,
+.swatch.is-server {
+	background: var(--accent);
+}
+
+.trace-total {
+	margin: 1rem 0 0;
+	font-size: 1.05rem;
+}
+
+.trace-steps {
+	display: grid;
+	gap: 0.3rem;
+	max-width: 24rem;
+	margin: 1rem 0 0;
+	padding: 0;
+	list-style: none;
+	font-family: var(--sans);
+	font-size: 0.9rem;
+}
+
+.trace-steps li {
+	display: grid;
+	grid-template-columns: 0.75rem 1fr auto;
+	align-items: center;
+	gap: 0.6rem;
+}
+
+.swatch {
+	width: 0.75rem;
+	height: 0.75rem;
+	background: var(--rule);
+}
+
+.ms {
+	font-variant-numeric: tabular-nums;
+	color: var(--quiet);
+}
+
+.trace-build {
+	margin: 1rem 0 0;
+	color: var(--quiet);
+	font-size: 1rem;
+}
+
+/* Home: work and experience lists */
+
+.work {
+	display: grid;
+	gap: 2rem;
+	margin: 0 0 1.5rem;
+	padding: 0;
+	list-style: none;
+}
+
+.work h3 {
+	margin: 0;
+}
+
+.work p {
+	margin: 0.35rem 0 0;
+}
+
+.stack,
+.when {
+	color: var(--quiet);
+	font-family: var(--sans);
+	font-size: 0.9rem;
+}
+
 @media (min-width: 40rem) {
 	.facts {
 		grid-template-columns: 1fr 1fr;
+	}
+
+	.hero.has-portrait {
+		grid-template-columns: 8rem 1fr;
+		gap: 2.25rem;
+		align-items: start;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.trace-bar.is-drawn {
+		animation: none;
 	}
 }

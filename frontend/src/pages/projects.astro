@@ -4,7 +4,7 @@ import Layout from '../layouts/Layout.astro';
 
 const entries = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
 const projects = await Promise.all(
-	entries.map(async (entry) => ({ ...entry.data, Content: (await render(entry)).Content })),
+	entries.map(async (entry) => ({ id: entry.id, ...entry.data, Content: (await render(entry)).Content })),
 );
 ---
 
@@ -17,8 +17,8 @@ const projects = await Promise.all(
 
 	<div style="margin-top: 4rem">
 		{
-			projects.map(({ title, summary, stack, role, result, Content }) => (
-				<article class="case">
+			projects.map(({ id, title, summary, stack, role, result, Content }) => (
+				<article class="case" id={id}>
 					<h2>{title}</h2>
 					<p>{summary}</p>
 					<Content />

@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -27,4 +28,30 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+        env:
+          # Shown in the hero: which commit this build came from.
+          PUBLIC_COMMIT_SHA: ${{ github.sha }}
       - run: npm test
+      # Only builds from main are published. The artifact is the exact dist/ that passed the tests.
+      - if: github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: frontend/dist
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,89 @@
+---
+import { builtAt, builtAtLabel, commitShort } from '../lib/build-info';
+---
+
+<section class="trace" aria-labelledby="trace-title" data-trace>
+	<h2 id="trace-title">How this page reached you</h2>
+
+	<div class="trace-bar" aria-hidden="true" data-bar></div>
+	<p class="trace-total" data-total hidden></p>
+	<ul class="trace-steps" data-steps hidden></ul>
+	<noscript>
+		<p class="trace-total">Turn on JavaScript to see how long this page took to reach you.</p>
+	</noscript>
+
+	<p class="trace-build">
+		GitHub Actions built it{commitShort && <> from commit <code>{commitShort}</code></>} on <time
+			datetime={builtAt.toISOString()}>{builtAtLabel}</time
+		>, after the checks passed. GitHub Pages served it from a CDN.
+	</p>
+	<p class="trace-build">
+		Next, a small API will run on a 2014 laptop at my house, and its live status will show up here. <a
+			href="/about">Why a laptop</a
+		>.
+	</p>
+</section>
+
+<script>
+	type Step = { label: string; ms: number; server?: boolean };
+
+	const root = document.querySelector<HTMLElement>('[data-trace]');
+	const [nav] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+
+	if (root && nav && nav.responseEnd > 0) {
+		const bar = root.querySelector<HTMLElement>('[data-bar]')!;
+		const total = root.querySelector<HTMLElement>('[data-total]')!;
+		const list = root.querySelector<HTMLElement>('[data-steps]')!;
+
+		const tls = nav.secureConnectionStart > 0;
+		const steps: Step[] = [
+			{ label: 'Looking up the address', ms: nav.domainLookupEnd - nav.domainLookupStart },
+			{
+				label: 'Opening a connection',
+				ms: (tls ? nav.secureConnectionStart : nav.connectEnd) - nav.connectStart,
+			},
+			{ label: 'Setting up encryption', ms: tls ? nav.connectEnd - nav.secureConnectionStart : 0 },
+			{ label: 'Waiting for the server', ms: nav.responseStart - nav.requestStart, server: true },
+			{ label: 'Downloading the page', ms: nav.responseEnd - nav.responseStart },
+		];
+
+		// Whatever the steps above don't cover (redirects, cache checks, gaps between phases)
+		// goes in its own step, so the bar always adds up to the total.
+		const elapsed = nav.responseEnd - nav.startTime;
+		const covered = steps.reduce((sum, step) => sum + Math.max(0, step.ms), 0);
+		steps.unshift({ label: 'Your browser getting ready', ms: elapsed - covered });
+		const shown = steps.filter((step) => step.ms >= 0.5);
+
+		const round = (ms: number) => `${Math.max(1, Math.round(ms))} ms`;
+		const kb = nav.encodedBodySize > 0 ? `${(nav.encodedBodySize / 1024).toFixed(1)} KB of HTML` : 'the HTML';
+		const fromCache = nav.transferSize === 0 && nav.encodedBodySize > 0;
+
+		total.textContent = fromCache
+			? `Your browser had this page saved, so it took ${round(elapsed)} and nothing crossed the network.`
+			: `${round(elapsed)} from your request to the last byte of ${kb}. The highlighted part is time spent at the server.`;
+		total.hidden = false;
+
+		if (!fromCache && shown.length > 0) {
+			for (const step of shown) {
+				const segment = document.createElement('span');
+				segment.className = step.server ? 'segment is-server' : 'segment';
+				segment.style.flexGrow = String(step.ms);
+				bar.append(segment);
+
+				const item = document.createElement('li');
+				const swatch = document.createElement('span');
+				swatch.className = step.server ? 'swatch is-server' : 'swatch';
+				swatch.setAttribute('aria-hidden', 'true');
+				const label = document.createElement('span');
+				label.textContent = step.label;
+				const value = document.createElement('span');
+				value.className = 'ms';
+				value.textContent = round(step.ms);
+				item.append(swatch, label, value);
+				list.append(item);
+			}
+			list.hidden = false;
+			bar.classList.add('is-drawn');
+		}
+	}
+</script>

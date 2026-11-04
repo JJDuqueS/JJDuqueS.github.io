@@ -1,39 +1,114 @@
 ---
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import DeliveryTrace from '../components/DeliveryTrace.astro';
 import Layout from '../layouts/Layout.astro';
+
+// The portrait is optional: drop portrait.jpg (or .png/.webp) into src/assets and it shows up.
+const portraits = import.meta.glob<{ default: ImageMetadata }>('../assets/portrait.{jpg,jpeg,png,webp}', {
+	eager: true,
+});
+const portrait = Object.values(portraits)[0]?.default;
+
+// The résumé link only appears once the PDF is in public/cv.
+const resumePath = '/cv/juan-duque-backend-cv.pdf';
+const hasResume = existsSync(join(process.cwd(), 'public', resumePath));
+
+const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const experience = (await getCollection('experience')).sort((a, b) => a.data.order - b.data.order);
 ---
 
 <Layout
 	title="Software Engineer"
-	description="Juan Duque is a backend-focused Software Engineer working with Python and React. This site runs on a 2014 laptop."
+	description="Juan Duque is a backend-focused Software Engineer working with Python and React."
 >
-	<h1>Juan Duque</h1>
-	<p class="lead">Software Engineer — backend-focused, Python &amp; React</p>
+	<header class:list={['hero', { 'has-portrait': portrait }]}>
+		{
+			portrait && (
+				<Image
+					class="portrait"
+					src={portrait}
+					alt="Juan Duque"
+					widths={[160, 320]}
+					sizes="10rem"
+					loading="eager"
+				/>
+			)
+		}
+		<div>
+			<h1>Juan Duque</h1>
+			<p class="lead">Software Engineer, backend-focused. Python and React.</p>
+			<p class="bio">
+				I've spent more than four years building software professionally, mostly on the backend. I deploy to
+				AWS and Azure, and run my own services with Docker and n8n.
+			</p>
+			<ul class="actions">
+				<li><a href="mailto:jduqueserna@gmail.com">Email me</a></li>
+				<li><a href="https://www.linkedin.com/in/jduques/" rel="me">LinkedIn</a></li>
+				{
+					hasResume && (
+						<li>
+							<a href={resumePath} download>
+								Download résumé (PDF)
+							</a>
+						</li>
+					)
+				}
+			</ul>
+		</div>
+	</header>
 
-	<p class="hook">This site runs on a 2014 laptop with a Celeron and 2 GB of RAM.</p>
+	<DeliveryTrace />
 
-	<p>
-		That constraint is the point. Every part of this site, from the static frontend to the deployment
-		pipeline, had to justify its memory. <a href="/about">The About page</a> explains each decision and what
-		it cost.
-	</p>
+	<section aria-labelledby="work-title">
+		<h2 id="work-title">Selected work</h2>
+		<ul class="work">
+			{
+				projects.map(({ id, data }) => (
+					<li>
+						<h3>
+							<a href={`/projects#${id}`}>{data.title}</a>
+						</h3>
+						<p>{data.summary}</p>
+						<p class="stack">{data.stack.join(', ')}</p>
+					</li>
+				))
+			}
+		</ul>
+		<p><a href="/projects">Read the case studies</a></p>
+	</section>
 
-	<h2>Stack</h2>
-	<ul class="plain-list">
-		<li>Python and FastAPI</li>
-		<li>React</li>
-		<li>AWS and Azure</li>
-	</ul>
+	{
+		experience.length > 0 && (
+			<section aria-labelledby="experience-title">
+				<h2 id="experience-title">Experience</h2>
+				<ul class="work">
+					{experience.map(({ data }) => (
+						<li>
+							<h3>
+								{data.role}, {data.company}
+							</h3>
+							<p class="when">
+								{data.start} to {data.end}
+							</p>
+							<p>{data.summary}</p>
+							{data.stack.length > 0 && <p class="stack">{data.stack.join(', ')}</p>}
+						</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
 
-	<h2>Work</h2>
-	<p>
-		<a href="/projects">Two case studies</a>: Sunward, a mobile app that shows the position of the sun, and
-		this site.
-	</p>
-
-	<h2 id="contact">Contact</h2>
-	<p>I'm looking for remote roles with international teams.</p>
-	<ul class="plain-list">
-		<li><a href="https://www.linkedin.com/in/jduques/" rel="me">LinkedIn</a></li>
-		<li><a href="mailto:jduqueserna@gmail.com">jduqueserna@gmail.com</a></li>
-	</ul>
+	<section aria-labelledby="contact">
+		<h2 id="contact">Contact</h2>
+		<p>
+			I'm looking for remote roles with international teams. The quickest way to reach me is <a
+				href="mailto:jduqueserna@gmail.com">jduqueserna@gmail.com</a
+			>.
+		</p>
+	</section>
 </Layout>

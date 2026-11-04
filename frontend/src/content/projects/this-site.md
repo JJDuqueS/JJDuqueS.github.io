@@ -1,6 +1,6 @@
 ---
 title: This site
-summary: A self-hosted portfolio built to fit on a 2014 laptop with 2 GB of RAM.
+summary: A portfolio with static pages on a CDN and a small API designed for a 2014 laptop with 2 GB of RAM.
 order: 2
 stack:
   - Astro
@@ -11,6 +11,7 @@ stack:
   - Docker
   - Cloudflare Tunnel
   - GitHub Actions
+  - GitHub Pages
 role: Architecture, implementation and operations.
 result: A fast static site, with the reasoning behind each decision published on the About page.
 ---
@@ -21,4 +22,4 @@ A portfolio can describe what an engineer knows, but it rarely shows it. I wante
 
 ### Solution
 
-The site is prerendered and served as static files, with a small API for the contact form. Everything is built in CI and only runs on the server, which never compiles anything. Traffic reaches it through a tunnel, so no ports are open on my home network. [The About page](/about) covers the trade-offs.
+The pages are prerendered and published to GitHub Pages, and only after the checks in CI pass. A small API for the contact form will run on a laptop at home, reached through a tunnel so no ports are open on my network. The laptop never compiles anything. [The About page](/about) covers the trade-offs.

@@ -1,5 +1,5 @@
 import { defineCollection } from 'astro:content';
-import { glob } from 'astro/loaders';
+import { file, glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 
 const projects = defineCollection({
@@ -14,4 +14,18 @@ const projects = defineCollection({
 	}),
 });
 
-export const collections = { projects };
+// Work history, taken from the Backend CV. Never add a company, role or date the CV doesn't state.
+const experience = defineCollection({
+	loader: file('./src/content/experience.json'),
+	schema: z.object({
+		role: z.string(),
+		company: z.string(),
+		start: z.string(),
+		end: z.string(),
+		summary: z.string(),
+		stack: z.array(z.string()).default([]),
+		order: z.number(),
+	}),
+});
+
+export const collections = { projects, experience };

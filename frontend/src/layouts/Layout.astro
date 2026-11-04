@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { commitShort } from '../lib/build-info';
 
 interface Props {
 	title: string;
@@ -20,6 +21,7 @@ const links = [
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="theme-color" content="#030b0a" />
 		<title>{fullTitle}</title>
 		<meta name="description" content={description} />
 		<meta property="og:type" content="website" />
@@ -51,7 +53,9 @@ const links = [
 			<main id="main">
 				<slot />
 			</main>
-			<footer class="site-footer">Served from a 2014 laptop.</footer>
+			<footer class="site-footer">
+				Built in CI{commitShort && <> from commit {commitShort}</>} and served by GitHub Pages.
+			</footer>
 		</div>
 	</body>
 </html>

@@ -23,7 +23,7 @@ const experience = (await getCollection('experience')).sort((a, b) => a.data.ord
 
 <Layout
 	title="Software Engineer"
-	description="Juan Duque is a backend-focused Software Engineer working with Python and React."
+	description="Juan Duque is a backend-focused Software Engineer in Colombia, working with Python, Node.js and React. Open to remote roles."
 >
 	<header class:list={['hero', { 'has-portrait': portrait }]}>
 		{
@@ -40,11 +40,13 @@ const experience = (await getCollection('experience')).sort((a, b) => a.data.ord
 		}
 		<div>
 			<h1>Juan Duque</h1>
-			<p class="lead">Software Engineer, backend-focused. Python and React.</p>
+			<p class="lead">Software Engineer, backend-focused. Python and Node.js.</p>
 			<p class="bio">
-				I've spent more than four years building software professionally, mostly on the backend. I deploy to
-				AWS and Azure, and run my own services with Docker and n8n.
+				For more than four years I've built backends in Python and Node.js: microservices for real-time data,
+				REST APIs and asynchronous pipelines. I'm based in Colombia (UTC−5), work in English at a C1 level and
+				I'm open to remote roles.
 			</p>
+			<p class="stack">Python, Node.js, TypeScript, PostgreSQL, React, Vue, Docker, AWS, Git, Jest</p>
 			<ul class="actions">
 				<li><a href="mailto:jduqueserna@gmail.com">Email me</a></li>
 				<li><a href="https://www.linkedin.com/in/jduques/" rel="me">LinkedIn</a></li>
@@ -106,7 +108,7 @@ const experience = (await getCollection('experience')).sort((a, b) => a.data.ord
 	<section aria-labelledby="contact">
 		<h2 id="contact">Contact</h2>
 		<p>
-			I'm looking for remote roles with international teams. The quickest way to reach me is <a
+			I'm open to remote roles, wherever the team is. The quickest way to reach me is <a
 				href="mailto:jduqueserna@gmail.com">jduqueserna@gmail.com</a
 			>.
 		</p>

@@ -1,1 +1,12 @@
-[]
+[
+	{
+		"id": "unitti",
+		"role": "Full Stack Developer (backend-focused)",
+		"company": "Unitti",
+		"start": "2021",
+		"end": "2026",
+		"summary": "Built Python microservices for real-time data processing, and REST APIs in Python and Node.js. Cut latency by 40–50% by optimizing PostgreSQL queries and bottlenecks, and moved heavy workloads to asynchronous pipelines. Remote.",
+		"stack": ["Python", "Node.js", "PostgreSQL"],
+		"order": 1
+	}
+]

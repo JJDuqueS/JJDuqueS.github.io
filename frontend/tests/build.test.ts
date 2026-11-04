@@ -62,6 +62,16 @@ describe('built site', () => {
 		expect(read('projects/index.html')).toContain('id="sunward"');
 	});
 
+	it('offers the résumé and lists the experience on the home page', () => {
+		const html = read('index.html');
+		expect(html).toContain('href="/cv/juan-duque-backend-cv.pdf"');
+		expect(html).toContain('Unitti');
+	});
+
+	it('never publishes a phone number in the pages', () => {
+		for (const page of pages) expect(read(page)).not.toMatch(/\+57|315\s?626/);
+	});
+
 	it('lists both case studies', () => {
 		const html = read('projects/index.html');
 		expect(html).toContain('Sunward');

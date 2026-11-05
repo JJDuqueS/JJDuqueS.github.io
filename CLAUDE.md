@@ -9,32 +9,32 @@ Software Engineer con enfoque backend. Stack principal: Python y Node.js en back
 Un portafolio personal en inglés (español opcional), estático y rápido. Esquema híbrido (ADR 0002): el frontend se publica en GitHub Pages y la API corre en un laptop ASUS X200MA en mi casa: Celeron N2830 (x86_64), 2 GB de RAM, HDD de 500 GB, Ubuntu. La infraestructura del propio sitio es un caso de estudio central: la página About explica las decisiones de arquitectura con sus pros y contras.
 
 ## Arquitectura decidida
-- Frontend estático con Astro e islas de React (ADR 0001), con rutas prerenderizadas y metadatos Open Graph por página.
-- Contenido de proyectos en archivos versionados (Markdown/JSON), compilado en el build. No hay tabla `projects` ni `GET /api/projects`.
+- Frontend con Next.js (App Router), React, TypeScript, Tailwind CSS y Motion (ADR 0003, reemplaza al 0001), exportado como sitio estático (`output: 'export'`, `trailingSlash: true`) con metadatos Open Graph por página. Nada de funciones de servidor de Next.js (route handlers, middleware, optimización de imágenes): el export estático no las soporta. Si algún día hacen falta, se migra a Vercel (ADR 0003).
+- Contenido en `frontend/content/` (proyectos en Markdown con frontmatter validado con Zod, experiencia en JSON), leído en el build. No hay tabla `projects` ni `GET /api/projects`.
 - API FastAPI (un solo worker) con `GET /api/health` (incluye uptime, carga y RAM, sin datos sensibles) y `POST /api/contact`.
 - SQLite dedicado al portafolio, solo para mensajes de contacto. Directorio montado en Docker (modo WAL), migraciones, `busy_timeout`, backups con `.backup` o `VACUUM INTO`.
-- Frontend en GitHub Pages (ADR 0002): el repo se renombra a `JJDuqueS.github.io` para servir en la raíz (`https://jjduques.github.io`), sin `base`. Con dominio propio: `CNAME` en `frontend/public/` y cambiar `site`.
+- Frontend en GitHub Pages (ADR 0002): el repo se renombra a `JJDuqueS.github.io` para servir en la raíz (`https://jjduques.github.io`), sin `base`. Con dominio propio: `CNAME` en `frontend/public/` y cambiar `SITE_URL` en `frontend/lib/site.ts`.
 - Enlaces internos siempre absolutos desde la raíz (`/about`); funcionan porque no hay `base`.
 - API en el laptop detrás de Caddy, expuesta con Cloudflare Tunnel en su propio hostname; necesita CORS para el origen del sitio. No se abren puertos en el router.
-- CI/CD: GitHub Actions ejecuta lint, tests y build; solo si pasan, el job `deploy` publica `frontend/dist` en GitHub Pages (solo desde `main`). Para la API: imágenes `linux/amd64` en GHCR que el servidor descarga. Nunca se compila en el servidor.
+- CI/CD: GitHub Actions ejecuta lint, tests y build; solo si pasan, el job `deploy` publica `frontend/out` en GitHub Pages (solo desde `main`). Para la API: imágenes `linux/amd64` en GHCR que el servidor descarga. Nunca se compila en el servidor.
 - Docker Compose para desarrollo y producción.
 - Monitor de disponibilidad externo.
 
 ## Páginas
-- Home: presentación, título "Software Engineer" con subtítulo de especialización, stack y contacto.
-- Projects: casos de estudio (problema, solución, stack, mi rol, resultado). Proyectos: Sunward (app React Native/Expo de posición del sol con sensores) y el propio portafolio; por ahora solo estos dos. Sin enlaces a repositorios por ahora.
+- Home: hero "flujo en vivo" (diagrama animado del recorrido real de la visita: tú → CDN → API → SQLite, con tiempos medidos por la Navigation Timing API y detalle de cada nodo), experiencia, stack, trabajo seleccionado y contacto.
+- Projects: listado y una página por caso de estudio (`/projects/<slug>/`) con problema, solución, stack, mi rol y resultado. Proyectos: Sunward (app React Native/Expo de posición del sol con sensores) y el propio portafolio; por ahora solo estos dos. Sin enlaces a repositorios por ahora.
 - About: la infraestructura del sitio, sus decisiones y trade-offs, alimentada por los ADRs del repositorio.
 
 ## Estilo visual
-Editorial sobrio en tema oscuro, con la paleta del banner de LinkedIn: fondo `#030B0A` y un solo acento, el verde `#00E68C`. La tipografía manda y hay mucho aire; nada de rejillas de neón ni brillos. Sin fuentes web.
+Tema oscuro con la paleta del banner de LinkedIn: fondo `#030B0A` y un solo acento, el verde `#00E68C` (tokens en `frontend/app/globals.css`). Más enganche visual que la versión editorial: el diagrama animado del hero es el momento memorable, y el resto acompaña sin competir con él. Un solo momento de animación orquestado al cargar; el resto del movimiento responde a acciones del visitante. Respetar `prefers-reduced-motion`. Tipografías Bricolage Grotesque (títulos) e Instrument Sans (texto), autoalojadas con Fontsource.
 
 ## Contacto en Home
-LinkedIn, correo y CV Backend en inglés (PDF en `frontend/public/cv/juan-duque-backend-cv.pdf`, publicado sin teléfono; el enlace solo aparece si el archivo existe). Foto en `frontend/src/assets/portrait.jpg` (cuadrada; .png/.webp también sirven); el hero la muestra solo si existe.
+LinkedIn, correo y CV Backend en inglés (PDF en `frontend/public/cv/juan-duque-backend-cv.pdf`, publicado sin teléfono; el enlace solo aparece si el archivo existe). Foto en `frontend/public/portrait.jpg` (cuadrada); el hero la muestra solo si existe.
 
 El título del sitio manda: Juan actualiza LinkedIn para que diga lo mismo.
 
 ## Experiencia
-Vive en `frontend/src/content/experience.json` y sale del CV Backend. No inventar empresas, cargos ni fechas: si el CV no lo dice, no va.
+Vive en `frontend/content/experience.json` y sale del CV Backend. No inventar empresas, cargos ni fechas: si el CV no lo dice, no va.
 
 ## Formulario de contacto
 Validación con Pydantic, rate limiting, honeypot, guardar primero y notificar después (n8n o SMTP, pendiente), errores sin detalles internos, retención limitada.

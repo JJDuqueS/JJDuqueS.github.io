@@ -1,12 +1,13 @@
 # Frontend
 
-Static site built with Astro and React islands (see [ADR 0001](../docs/adr/0001-astro-with-react-islands.md)). Requires Node 22.23.4 or newer.
+Next.js (App Router), React, TypeScript, Tailwind CSS and Motion, exported as a static site to `out/` and published to GitHub Pages by CI. See `docs/adr/0002` and `docs/adr/0003`.
 
-```sh
-npm install
-npm run dev      # dev server at http://localhost:4321
-npm run build    # static output in dist/
-npm run preview  # serves dist/ locally
-npm run lint     # astro check and ESLint
-npm test         # checks the built site, so run the build first
+```bash
+npm ci
+npm run dev      # http://localhost:3000
+npm run lint     # route types, type check and ESLint
+npm run build    # static export in out/
+npm test         # unit tests and checks on the exported site (run the build first)
 ```
+
+Content lives in `content/`: case studies in `content/projects/*.md`, work history in `content/experience.json` (from the Backend CV only) and the stack in `content/stack.json`. The résumé is `public/cv/juan-duque-backend-cv.pdf`, published without the phone number.

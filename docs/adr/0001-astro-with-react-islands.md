@@ -1,7 +1,7 @@
 # 0001. Astro with React islands for the frontend
 
 Date: 2026-10-31
-Status: Accepted
+Status: Superseded by 0003
 
 ## Context
 The site is mostly static content served by Caddy from a laptop with a Celeron N2830 and 2 GB of RAM. There is no Node process in production and nothing is compiled on the server. Each page needs prerendered HTML and its own Open Graph metadata, so links look right when shared on LinkedIn. Project content lives in versioned Markdown or JSON files, and a Spanish version may come later.

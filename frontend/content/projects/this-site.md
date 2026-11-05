@@ -3,8 +3,11 @@ title: This site
 summary: A portfolio with static pages on a CDN and a small API designed for a 2014 laptop with 2 GB of RAM.
 order: 2
 stack:
-  - Astro
+  - Next.js
   - React
+  - TypeScript
+  - Tailwind CSS
+  - Motion
   - FastAPI
   - SQLite
   - Caddy
@@ -22,4 +25,4 @@ A portfolio can describe what an engineer knows, but it rarely shows it. I wante
 
 ### Solution
 
-The pages are prerendered and published to GitHub Pages, and only after the checks in CI pass. A small API for the contact form will run on a laptop at home, reached through a tunnel so no ports are open on my network. The laptop never compiles anything. [The About page](/about) covers the trade-offs.
+The pages are built with Next.js and React, exported as static files and published to GitHub Pages, and only after the checks in CI pass. The home page draws the real path of each visit, timed by the browser. A small API for the contact form will run on a laptop at home, reached through a tunnel so no ports are open on my network. The laptop never compiles anything. [The About page](/about/) covers the trade-offs.

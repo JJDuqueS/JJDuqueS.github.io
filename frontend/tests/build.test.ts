@@ -1,11 +1,18 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-// Checks the built site, so run `npm run build` first.
-const pages = ['index.html', 'projects/index.html', 'about/index.html'];
-const read = (page: string) => readFileSync(new URL(`../dist/${page}`, import.meta.url), 'utf8');
+// Checks the exported site, so run `npm run build` first.
+const pages = [
+	'index.html',
+	'projects/index.html',
+	'projects/sunward/index.html',
+	'projects/this-site/index.html',
+	'about/index.html',
+];
+const out = (path: string) => new URL(`../out/${path}`, import.meta.url);
+const read = (page: string) => readFileSync(out(page), 'utf8');
 
-describe.each(pages)('built page %s', (page) => {
+describe.each(pages)('exported page %s', (page) => {
 	const html = read(page);
 
 	it('is prerendered in English', () => {
@@ -18,63 +25,61 @@ describe.each(pages)('built page %s', (page) => {
 		expect(html).toMatch(/<title>[^<]+<\/title>/);
 	});
 
-	it('has its own Open Graph title and description', () => {
+	it('has its own Open Graph title, description and absolute URL', () => {
 		expect(html).toMatch(/<meta property="og:title" content="[^"]+"/);
 		expect(html).toMatch(/<meta property="og:description" content="[^"]+"/);
-	});
-
-	it('has an absolute og:url on the published site', () => {
 		expect(html).toMatch(/<meta property="og:url" content="https:\/\/jjduques\.github\.io\/[^"]*"/);
 	});
 
-	// GitHub Pages serves from the root with no base path (ADR 0002). A link that points
-	// at a page the build didn't produce is broken in production too.
-	it('only links to pages and files that exist in the build', () => {
-		const hrefs = [...html.matchAll(/\b(?:href|src)="(\/[^"#?]*)/g)].map((match) => match[1]);
-		for (const href of hrefs) {
-			const target = href.endsWith('/') ? `${href}index.html` : href;
-			const candidates = [target, `${target}/index.html`];
-			const found = candidates.some((candidate) => existsSync(new URL(`../dist${candidate}`, import.meta.url)));
-			expect(found, `${page} links to ${href}`).toBe(true);
+	// GitHub Pages serves from the root with no base path (ADR 0002). A link to a page
+	// or file the export didn't produce is broken in production too.
+	it('only links to pages and files that exist in the export', () => {
+		const paths = [...html.matchAll(/\b(?:href|src)="(\/[^"#?]*)/g)].map((match) => match[1]);
+		for (const path of paths) {
+			const decoded = decodeURIComponent(path);
+			const candidates = decoded.endsWith('/') ? [`${decoded}index.html`] : [decoded, `${decoded}/index.html`];
+			expect(
+				candidates.some((candidate) => existsSync(out(candidate.slice(1)))),
+				`${page} links to ${path}`,
+			).toBe(true);
 		}
 	});
 
 	it('has exactly one main heading', () => {
 		expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
 	});
+
+	it('never publishes a phone number', () => {
+		expect(html).not.toMatch(/\+57|315\s?626/);
+	});
 });
 
-describe('built site', () => {
+describe('exported site', () => {
 	it('gives every page a different title', () => {
 		const titles = pages.map((page) => read(page).match(/<title>([^<]+)<\/title>/)?.[1]);
 		expect(new Set(titles).size).toBe(pages.length);
 	});
 
-	it('shows how the home page was delivered', () => {
-		const html = read('index.html');
-		expect(html).toContain('How this page reached you');
-		expect(html).toContain('data-trace');
+	it('has a 404 page for GitHub Pages', () => {
+		expect(existsSync(out('404.html'))).toBe(true);
 	});
 
-	it('links every case study on the home page to its anchor', () => {
+	it('draws the live flow on the home page', () => {
 		const html = read('index.html');
-		expect(html).toContain('href="/projects#sunward"');
-		expect(read('projects/index.html')).toContain('id="sunward"');
+		expect(html).toContain('How this page reached you');
+		for (const node of ['GitHub Pages', 'A 2014 laptop at my house', 'SQLite']) expect(html).toContain(node);
 	});
 
 	it('offers the résumé and lists the experience on the home page', () => {
 		const html = read('index.html');
 		expect(html).toContain('href="/cv/juan-duque-backend-cv.pdf"');
 		expect(html).toContain('Unitti');
+		expect(html).not.toContain('Azure');
 	});
 
-	it('never publishes a phone number in the pages', () => {
-		for (const page of pages) expect(read(page)).not.toMatch(/\+57|315\s?626/);
-	});
-
-	it('lists both case studies', () => {
-		const html = read('projects/index.html');
-		expect(html).toContain('Sunward');
-		expect(html).toContain('This site');
+	it('links every case study from the home page', () => {
+		const html = read('index.html');
+		expect(html).toContain('href="/projects/sunward/"');
+		expect(html).toContain('href="/projects/this-site/"');
 	});
 });

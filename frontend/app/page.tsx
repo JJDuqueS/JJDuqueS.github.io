@@ -23,7 +23,7 @@ export default function Home() {
 				<header className="grid items-end gap-8 md:grid-cols-[minmax(0,1fr)_auto]">
 					<div>
 						<h1 className="font-display text-[clamp(3.5rem,13vw,9rem)] leading-[0.88] font-bold tracking-[-0.035em] [font-stretch:78%]">
-							Juan Duque
+							Juan José Duque S.
 						</h1>
 						<p className="mt-6 max-w-2xl text-xl leading-snug md:text-2xl">
 							Software Engineer building real-time backends in Python and Node.js.
@@ -41,7 +41,7 @@ export default function Home() {
 							alt="Juan Duque"
 							width={400}
 							height={400}
-							className="order-first size-24 rounded-2xl object-cover md:order-none md:size-44"
+							className="order-first size-24 rounded-2xl object-cover md:order-none md:size-84"
 						/>
 					)}
 				</header>

@@ -11,7 +11,7 @@ type Stage = 'waiting' | 'out' | 'server' | 'in' | 'done';
 const nodes: { id: NodeId; name: string; place: string; live: boolean }[] = [
 	{ id: 'you', name: 'You', place: 'Your browser', live: true },
 	{ id: 'cdn', name: 'GitHub Pages', place: 'A CDN edge near you', live: true },
-	{ id: 'api', name: 'API', place: 'A 2014 laptop at my house', live: false },
+	{ id: 'api', name: 'API', place: 'A 2014 laptop working as a homelab', live: false },
 	{ id: 'db', name: 'SQLite', place: 'One file on that laptop', live: false },
 ];
 

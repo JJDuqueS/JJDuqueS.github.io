@@ -67,7 +67,7 @@ describe('exported site', () => {
 	it('draws the live flow on the home page', () => {
 		const html = read('index.html');
 		expect(html).toContain('How this page reached you');
-		for (const node of ['GitHub Pages', 'A 2014 laptop at my house', 'SQLite']) expect(html).toContain(node);
+		for (const node of ['GitHub Pages', 'A 2014 laptop working as a homelab', 'SQLite']) expect(html).toContain(node);
 	});
 
 	it('offers the résumé and lists the experience on the home page', () => {

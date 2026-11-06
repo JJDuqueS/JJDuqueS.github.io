@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#030b0a"/><path d="M19 8v11.5a4.5 4.5 0 0 1-9 0" fill="none" stroke="#00e68c" stroke-width="3" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#030b0a"/>
+  <!-- Back J, in ink, up and to the left -->
+  <path d="M17 5.5v9.25a4.25 4.25 0 0 1-8.5 0" fill="none" stroke="#e6eeeb" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- A paper-coloured outline cuts the back J where the front one crosses it -->
+  <path d="M22.5 11v9.25a4.25 4.25 0 0 1-8.5 0" fill="none" stroke="#030b0a" stroke-width="5.6" stroke-linecap="round"/>
+  <!-- Front J, in the accent green -->
+  <path d="M22.5 11v9.25a4.25 4.25 0 0 1-8.5 0" fill="none" stroke="#00e68c" stroke-width="2.8" stroke-linecap="round"/>
+</svg>

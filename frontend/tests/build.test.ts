@@ -67,7 +67,7 @@ describe('exported site', () => {
 	it('draws the live flow on the home page', () => {
 		const html = read('index.html');
 		expect(html).toContain('How this page reached you');
-		for (const node of ['GitHub Pages', 'A 2014 laptop at my house', 'SQLite']) expect(html).toContain(node);
+		for (const node of ['GitHub Pages', 'A 2014 laptop working as a homelab', 'SQLite']) expect(html).toContain(node);
 	});
 
 	it('offers the résumé and lists the experience on the home page', () => {
@@ -75,6 +75,26 @@ describe('exported site', () => {
 		expect(html).toContain('href="/cv/juan-duque-backend-cv.pdf"');
 		expect(html).toContain('Unitti');
 		expect(html).not.toContain('Azure');
+	});
+
+	it('opens LinkedIn in a new tab', () => {
+		const html = read('index.html');
+		const links = [...html.matchAll(/<a[^>]*href="https:\/\/www\.linkedin\.com[^"]*"[^>]*>/g)].map((match) => match[0]);
+		expect(links.length).toBeGreaterThan(0);
+		for (const link of links) {
+			expect(link).toContain('target="_blank"');
+			expect(link).toMatch(/rel="[^"]*noopener/);
+		}
+	});
+
+	it('has a contact form with a honeypot field', () => {
+		const html = read('index.html');
+		expect(html).toMatch(/<textarea[^>]*name="message"/);
+		expect(html).toMatch(/<input[^>]*name="website"/);
+	});
+
+	it('draws icons for the stack', () => {
+		expect(read('index.html').match(/<img[^>]*src="\/icons\/[a-z]+\.svg"/g)?.length ?? 0).toBeGreaterThanOrEqual(10);
 	});
 
 	it('links every case study from the home page', () => {

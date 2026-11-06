@@ -26,10 +26,10 @@ Un portafolio personal en inglés (español opcional), estático y rápido. Esqu
 - About: la infraestructura del sitio, sus decisiones y trade-offs, alimentada por los ADRs del repositorio.
 
 ## Estilo visual
-Tema oscuro con la paleta del banner de LinkedIn: fondo `#030B0A` y un solo acento, el verde `#00E68C` (tokens en `frontend/app/globals.css`). Más enganche visual que la versión editorial: el diagrama animado del hero es el momento memorable, y el resto acompaña sin competir con él. Un solo momento de animación orquestado al cargar; el resto del movimiento responde a acciones del visitante. Respetar `prefers-reduced-motion`. Tipografías Bricolage Grotesque (títulos) e Instrument Sans (texto), autoalojadas con Fontsource.
+Tema oscuro con la paleta del banner de LinkedIn: fondo `#030B0A` y un solo acento, el verde `#00E68C` (tokens en `frontend/app/globals.css`). Más enganche visual que la versión editorial: el diagrama animado del hero es el momento memorable, y el resto acompaña sin competir con él. Un solo momento de animación orquestado al cargar; el resto del movimiento responde a acciones del visitante. Respetar `prefers-reduced-motion`. Tipografías Bricolage Grotesque (títulos) e Instrument Sans (texto), autoalojadas con Fontsource. Iconos del stack de Simple Icons, monocromáticos y dibujados en el HTML en el build (sin JavaScript); lo que no tiene marca (AWS, SQL Server, REST APIs) va solo como texto. Favicon: monograma de dos J superpuestas (`frontend/app/icon.svg`).
 
 ## Contacto en Home
-LinkedIn, correo y CV Backend en inglés (PDF en `frontend/public/cv/juan-duque-backend-cv.pdf`, publicado sin teléfono; el enlace solo aparece si el archivo existe). Foto en `frontend/public/portrait.jpg` (cuadrada); el hero la muestra solo si existe.
+LinkedIn (se abre en una pestaña nueva), formulario de contacto y CV Backend en inglés (PDF en `frontend/public/cv/juan-duque-backend-cv.pdf`, publicado sin teléfono; el enlace solo aparece si el archivo existe). Foto en `frontend/public/portrait.jpg` (cuadrada; idealmente ≥ 700 px de lado, porque el hero la muestra hasta 336 px); el hero la muestra solo si existe.
 
 El título del sitio manda: Juan actualiza LinkedIn para que diga lo mismo.
 
@@ -37,7 +37,10 @@ El título del sitio manda: Juan actualiza LinkedIn para que diga lo mismo.
 Vive en `frontend/content/experience.json` y sale del CV Backend. No inventar empresas, cargos ni fechas: si el CV no lo dice, no va.
 
 ## Formulario de contacto
-Validación con Pydantic, rate limiting, honeypot, guardar primero y notificar después (n8n o SMTP, pendiente), errores sin detalles internos, retención limitada.
+- El botón "Email me" del hero abre el formulario en un diálogo; también está en la sección Contact (`frontend/components/contact-form.tsx`).
+- Envía `POST` JSON a `NEXT_PUBLIC_CONTACT_ENDPOINT`, que CI toma de la variable de repositorio `CONTACT_ENDPOINT`. Mientras esté vacía, el formulario se ve pero está deshabilitado y ofrece el correo.
+- Contrato que debe cumplir la API: cuerpo `{ name, email, message, website }`. `website` es el honeypot: si viene con algo, responder 2xx y descartar. Límites: name ≤ 100, email ≤ 254, message 10–5000. Respuestas: 2xx enviado, 422 datos inválidos, 429 rate limit, 5xx error. CORS para `https://jjduques.github.io`.
+- En la API: validación con Pydantic, rate limiting, guardar primero y notificar después (n8n o SMTP, pendiente), errores sin detalles internos, retención limitada.
 
 ## Fuera de alcance del MVP
 Demos en vivo, versión en español, selector de tema claro/oscuro, analítica, panel de edición, SSR y bases de datos servidor.

@@ -1,3 +1,5 @@
+import { ContactDialogButton } from '@/components/contact-dialog';
+import { ContactForm } from '@/components/contact-form';
 import { LiveFlow } from '@/components/live-flow';
 import { ProjectCard } from '@/components/project-card';
 import { Section } from '@/components/section';
@@ -5,6 +7,7 @@ import { buildInfo } from '@/lib/build-info';
 import { getExperience, getProjects, getStack } from '@/lib/content';
 import { pageMetadata } from '@/lib/metadata';
 import { hasPortrait, hasResume, person, portraitPath, resumePath } from '@/lib/site';
+import { stackIcon } from '@/lib/stack-icons';
 
 export const metadata = pageMetadata({
 	description:
@@ -41,7 +44,7 @@ export default function Home() {
 							alt="Juan Duque"
 							width={400}
 							height={400}
-							className="order-first size-24 rounded-2xl object-cover md:order-none md:size-84"
+							className="order-first size-36 rounded-3xl object-cover md:order-none md:size-60 lg:size-84"
 						/>
 					)}
 				</header>
@@ -59,20 +62,20 @@ export default function Home() {
 						</li>
 					)}
 					<li>
-						<a
-							href={`mailto:${person.email}`}
-							className="inline-flex items-center rounded-full border border-segment px-5 py-2.5 font-semibold text-ink no-underline transition-colors hover:border-accent hover:text-accent"
-						>
+						<ContactDialogButton className="inline-flex cursor-pointer items-center rounded-full border border-segment px-5 py-2.5 font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
 							Email me
-						</a>
+						</ContactDialogButton>
 					</li>
 					<li>
 						<a
 							href={person.linkedin}
-							rel="me"
-							className="inline-flex items-center rounded-full border border-segment px-5 py-2.5 font-semibold text-ink no-underline transition-colors hover:border-accent hover:text-accent"
+							target="_blank"
+							rel="me noopener noreferrer"
+							className="inline-flex items-center gap-2 rounded-full border border-segment px-5 py-2.5 font-semibold text-ink no-underline transition-colors hover:border-accent hover:text-accent"
 						>
 							LinkedIn
+							<NewTabIcon />
+							<span className="sr-only">(opens in a new tab)</span>
 						</a>
 					</li>
 				</ul>
@@ -116,36 +119,66 @@ export default function Home() {
 					{stack.map(({ group, items }) => (
 						<div key={group} className="border-t border-rule pt-4">
 							<dt className="font-display text-lg font-semibold">{group}</dt>
-							<dd className="mt-2 text-quiet">{items.join(', ')}</dd>
+							<dd className="mt-3">
+								<ul className="flex flex-wrap gap-x-4 gap-y-2.5">
+									{items.map((item) => {
+										const icon = stackIcon(item);
+										return (
+											<li key={item} className="flex items-center gap-2 text-quiet">
+												{icon && (
+													// eslint-disable-next-line @next/next/no-img-element
+													<img src={icon} alt="" width={16} height={16} loading="lazy" className="size-4 shrink-0" />
+												)}
+												{item}
+											</li>
+										);
+									})}
+								</ul>
+							</dd>
 						</div>
 					))}
 				</dl>
 			</Section>
 
 			<Section id="contact" title="Contact">
-				<p className="max-w-2xl text-xl leading-snug md:text-2xl">
-					I&apos;m open to remote roles, wherever the team is. The quickest way to reach me is{' '}
-					<a href={`mailto:${person.email}`} className="text-accent underline">
-						{person.email}
-					</a>
-					.
-				</p>
-				<p className="mt-4 text-quiet">
-					You can also find me on{' '}
-					<a href={person.linkedin} rel="me" className="text-ink underline">
-						LinkedIn
-					</a>
-					{hasResume && (
-						<>
-							, or{' '}
-							<a href={resumePath} download className="text-ink underline">
-								download my résumé
+				<div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)]">
+					<div>
+						<p className="text-xl leading-snug md:text-2xl">
+							I&apos;m open to remote roles, wherever the team is. Send me a message, or write to{' '}
+							<a href={`mailto:${person.email}`} className="text-accent underline">
+								{person.email}
 							</a>
-						</>
-					)}
-					.
-				</p>
+							.
+						</p>
+						<p className="mt-4 text-quiet">
+							You can also find me on{' '}
+							<a href={person.linkedin} target="_blank" rel="me noopener noreferrer" className="text-ink underline">
+								LinkedIn<span className="sr-only"> (opens in a new tab)</span>
+							</a>
+							{hasResume && (
+								<>
+									, or{' '}
+									<a href={resumePath} download className="text-ink underline">
+										download my résumé
+									</a>
+								</>
+							)}
+							.
+						</p>
+					</div>
+					<div className="relative">
+						<ContactForm />
+					</div>
+				</div>
 			</Section>
 		</>
+	);
+}
+
+function NewTabIcon() {
+	return (
+		<svg viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+			<path d="M6 3H3.5A.5.5 0 0 0 3 3.5v9a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V10M9 3h4v4M13 3 7.5 8.5" />
+		</svg>
 	);
 }

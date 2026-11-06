@@ -27,10 +27,16 @@ const decisions = [
 		con: 'One writer at a time and a single machine. Backups need care, because copying a live file is not safe.',
 	},
 	{
-		title: 'Cloudflare Tunnel, not open ports',
-		text: 'A connector inside the laptop opens the connection outward, and Cloudflare handles HTTPS for the API.',
-		pro: 'No open ports on my home network and no need for a public IP.',
-		con: 'The API depends on Cloudflare, which also sits in the path of all its traffic.',
+		title: 'Tailscale Funnel, not open ports',
+		text: 'Tailscale runs on the laptop and publishes the API on a ts.net address. It terminates HTTPS, so there is no reverse proxy to run.',
+		pro: 'No open ports on my home network, no public IP and no domain needed, for free.',
+		con: 'A ts.net address looks less polished than my own domain, and Funnel is still in beta. With a domain, the plan is Cloudflare Tunnel.',
+	},
+	{
+		title: 'n8n sends the email, not the API',
+		text: 'Each message is saved first. Then the API calls a webhook in n8n, which already runs on the laptop and emails me.',
+		pro: 'No mail credentials in the API, and a message is never lost: if n8n is down, the API retries later.',
+		con: 'The API has to reach one other service on the laptop, which is the only exception to keeping it isolated.',
 	},
 	{
 		title: 'Build in CI, never on the server',
@@ -48,8 +54,8 @@ const decisions = [
 
 const trip = [
 	'Your browser asks GitHub Pages for the page, and its CDN sends back a file that was built in advance.',
-	'When the API is live, its requests go to Cloudflare over HTTPS and travel through a tunnel to the laptop.',
-	'On the laptop, Caddy passes them to FastAPI, which stores contact messages in SQLite.',
+	'The contact form talks to the API directly: Tailscale Funnel receives the request over HTTPS and forwards it to the laptop.',
+	'On the laptop, FastAPI saves the message in SQLite, then asks n8n to email it to me.',
 ];
 
 export default function AboutPage() {

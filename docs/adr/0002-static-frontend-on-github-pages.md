@@ -1,7 +1,7 @@
 # 0002. Static frontend on GitHub Pages, API on the laptop
 
 Date: 2026-11-04
-Status: Accepted
+Status: Accepted (exposure replaced by 0004)
 
 Supersedes the hosting part of the original plan, where Caddy on the laptop served both the static pages and the API. ADR 0001 (Astro with React islands) still stands.
 

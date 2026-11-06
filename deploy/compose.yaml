@@ -1,0 +1,32 @@
+# The portfolio API on the laptop. Tailscale Funnel (on the host, not in Docker)
+# publishes 127.0.0.1:8080 at https://<machine>.<tailnet>.ts.net. Setup: README.md.
+name: portfolio
+
+services:
+  api:
+    image: ghcr.io/jjduques/portfolio-api:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      # Only reachable from the laptop itself, where Funnel forwards to it.
+      - "127.0.0.1:8080:8000"
+    volumes:
+      - ./data:/data
+      - ./backups:/backups
+    extra_hosts:
+      # Lets the API reach the n8n webhook on the same laptop (ADR 0004).
+      - "host.docker.internal:host-gateway"
+    # About 60 MB in use; the cap protects the other services on a 2 GB machine.
+    mem_limit: 160m
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"

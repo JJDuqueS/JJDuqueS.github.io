@@ -167,9 +167,9 @@ export function LiveFlow({ commit, builtAt, builtAtLabel }: { commit?: string; b
 						{selected === 'api' && (
 							<Details title="Next: an API on a 2014 laptop" badge="Not live yet">
 								<p>
-									A small FastAPI service will run on an ASUS X200MA with a Celeron and 2 GB of RAM, reached
-									through Cloudflare Tunnel so no ports are open on my home network. It will receive the contact
-									form and report its own health.
+									A small FastAPI service will run on an ASUS X200MA with a Celeron and 2 GB of RAM, published
+									with Tailscale Funnel so no ports are open on my home network. It will receive the contact form
+									and report its own health.
 								</p>
 								<p>
 									When it&apos;s live, this step will show its real status. <Link href="/about/" className="text-accent underline">Why a laptop</Link>

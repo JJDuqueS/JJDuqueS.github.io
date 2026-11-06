@@ -1,0 +1,8 @@
+fastapi<0.163,>=0.162
+uvicorn<0.55,>=0.54
+pydantic[email]<3,>=2.14
+httpx<0.29,>=0.28
+
+[dev]
+pytest<10,>=9.2
+ruff<0.18,>=0.17

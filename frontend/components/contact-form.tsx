@@ -2,9 +2,10 @@
 
 import { useId, useState, type FormEvent } from 'react';
 
-// Set at build time from the CONTACT_ENDPOINT repository variable (see ci.yml).
+// The API's URL comes from the API_URL repository variable at build time (see ci.yml).
 // Empty until the FastAPI service on the laptop is live; the form says so and stays disabled.
-const endpoint = process.env.NEXT_PUBLIC_CONTACT_ENDPOINT ?? '';
+const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
+const endpoint = apiUrl ? `${apiUrl}/api/contact` : '';
 
 const EMAIL = 'jduqueserna@gmail.com';
 

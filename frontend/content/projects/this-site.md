@@ -10,9 +10,9 @@ stack:
   - Motion
   - FastAPI
   - SQLite
-  - Caddy
   - Docker
-  - Cloudflare Tunnel
+  - Tailscale Funnel
+  - n8n
   - GitHub Actions
   - GitHub Pages
 role: Architecture, implementation and operations.
@@ -25,4 +25,4 @@ A portfolio can describe what an engineer knows, but it rarely shows it. I wante
 
 ### Solution
 
-The pages are built with Next.js and React, exported as static files and published to GitHub Pages, and only after the checks in CI pass. The home page draws the real path of each visit, timed by the browser. A small API for the contact form will run on a laptop at home, reached through a tunnel so no ports are open on my network. The laptop never compiles anything. [The About page](/about/) covers the trade-offs.
+The pages are built with Next.js and React, exported as static files and published to GitHub Pages, and only after the checks in CI pass. The home page draws the real path of each visit, timed by the browser. A small FastAPI service for the contact form runs on a laptop at home, published with Tailscale Funnel so no ports are open on my network, and n8n emails me each message. The laptop never compiles anything. [The About page](/about/) covers the trade-offs.

@@ -36,6 +36,9 @@ jobs:
         env:
           # Shown in the hero: which commit this build came from.
           PUBLIC_COMMIT_SHA: ${{ github.sha }}
+          # The contact form posts here. Empty until the API is live: set the CONTACT_ENDPOINT
+          # repository variable (Settings > Secrets and variables > Actions > Variables).
+          NEXT_PUBLIC_CONTACT_ENDPOINT: ${{ vars.CONTACT_ENDPOINT }}
       - run: npm test
       # Only builds from main are published. The artifact is the exact out/ that passed the tests.
       - if: github.ref == 'refs/heads/main'

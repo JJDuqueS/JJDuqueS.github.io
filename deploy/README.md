@@ -7,7 +7,7 @@ visitor ──HTTPS──▶ Tailscale Funnel ──▶ 127.0.0.1:8080 ──▶
                                                               └──webhook──▶ n8n ──▶ email
 ```
 
-Everything below runs on the laptop, as a user in the `docker` group. Nothing is built there: CI publishes `ghcr.io/jjduques/portfolio-api`, and the laptop pulls it.
+Everything below runs on the laptop, as a user in the `docker` group (`sudo usermod -aG docker $USER`, then log out and back in). The service lives in `/opt/portfolio-api`. Nothing is built there: CI publishes `ghcr.io/jjduques/portfolio-api`, and the laptop pulls it.
 
 ## 1. Make the image pullable
 
@@ -16,11 +16,13 @@ After the first merge to `main`, CI publishes the image. On GitHub: your profile
 ## 2. Get the files
 
 ```bash
-mkdir -p ~/portfolio-api && cd ~/portfolio-api
+# /opt is owned by root; the folder itself belongs to you, so no sudo is needed day to day.
+sudo mkdir -p /opt/portfolio-api && sudo chown "$USER":"$USER" /opt/portfolio-api
+cd /opt/portfolio-api
 base=https://raw.githubusercontent.com/JJDuqueS/JJDuqueS.github.io/main/deploy
 for file in compose.yaml .env.example backup.sh update.sh; do curl -fsSLO "$base/$file"; done
 chmod +x backup.sh update.sh
-cp .env.example .env
+cp .env.example .env && chmod 600 .env
 openssl rand -hex 32   # paste it as N8N_WEBHOOK_TOKEN in .env
 nano .env
 ```
@@ -92,8 +94,8 @@ crontab -e
 ```
 
 ```
-*/15 * * * * ~/portfolio-api/update.sh >> ~/portfolio-api/update.log 2>&1
-30 3 * * *   ~/portfolio-api/backup.sh >> ~/portfolio-api/backup.log 2>&1
+*/15 * * * * /opt/portfolio-api/update.sh >> /opt/portfolio-api/update.log 2>&1
+30 3 * * *   /opt/portfolio-api/backup.sh >> /opt/portfolio-api/backup.log 2>&1
 ```
 
 `update.sh` pulls the image CI published from `main` and restarts the API only if it changed. `backup.sh` writes a consistent copy with `VACUUM INTO` (copying a live SQLite file is not safe) and keeps the newest 14.
@@ -101,7 +103,7 @@ crontab -e
 ## Restoring a backup
 
 ```bash
-cd ~/portfolio-api
+cd /opt/portfolio-api
 docker compose stop api
 mv data/contact.db data/contact.db.broken && rm -f data/contact.db-wal data/contact.db-shm
 cp backups/contact-YYYY-MM-DDTHHMM.db data/contact.db && sudo chown 10001:10001 data/contact.db

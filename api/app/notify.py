@@ -14,6 +14,26 @@ from app.config import Settings
 log = logging.getLogger("portfolio.notify")
 
 
+def describe_failure(error: httpx.HTTPError) -> str:
+    """What went wrong calling the webhook and where to look, without the URL or the token."""
+    if isinstance(error, httpx.HTTPStatusError):
+        status = error.response.status_code
+        hints = {
+            401: "n8n rejected the token: check the Header Auth credential",
+            403: "n8n rejected the token: the header must be X-Webhook-Token with the value from .env",
+            404: "n8n has no such webhook: activate the workflow and check the path and the POST method",
+            500: "the n8n workflow failed: open its executions",
+        }
+        return f"HTTP {status} ({hints.get(status, 'unexpected answer from n8n')})"
+    if isinstance(error, httpx.ConnectTimeout):
+        return "ConnectTimeout (no answer: a firewall is probably blocking the port from Docker)"
+    if isinstance(error, httpx.ConnectError):
+        return f"ConnectError ({error}: n8n isn't reachable at that host and port from the container)"
+    if isinstance(error, httpx.TimeoutException):
+        return f"{type(error).__name__} (n8n accepted the call but took more than 10 s to answer)"
+    return f"{type(error).__name__} ({error})"
+
+
 def notify_pending(settings: Settings, client: httpx.Client | None = None) -> int:
     if not settings.n8n_webhook_url:
         return 0
@@ -37,7 +57,7 @@ def notify_pending(settings: Settings, client: httpx.Client | None = None) -> in
                 response.raise_for_status()
             except httpx.HTTPError as error:
                 db.mark_failed(settings.database_path, message.id)
-                log.warning("notify failed for message %s: %s", message.id, type(error).__name__)
+                log.warning("notify failed for message %s: %s", message.id, describe_failure(error))
                 continue
             db.mark_notified(settings.database_path, message.id)
             sent += 1

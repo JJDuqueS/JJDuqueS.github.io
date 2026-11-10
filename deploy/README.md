@@ -74,7 +74,7 @@ docker compose exec api python -m app.check_webhook
 | `N8N_WEBHOOK_URL is empty` | `.env` isn't filled in, or the container started before you edited it | Edit `.env`, then `docker compose up -d` |
 | `ConnectError (... Name or service not known` | The container can't resolve `host.docker.internal` | Use this repository's `compose.yaml`, which sets `extra_hosts` |
 | `ConnectError (... Connection refused` | Nothing answers on that port from Docker: n8n is stopped, uses another port, or publishes it as `127.0.0.1:5678:5678` | `docker ps` to check n8n; publish the port as `"5678:5678"`, or use the shared network below |
-| `ConnectTimeout` | A firewall drops traffic from Docker to the host | `sudo ufw allow in on br+ to any port 5678 proto tcp`, or use the shared network below |
+| `ConnectTimeout` | A firewall drops traffic from Docker to the host | `sudo ufw allow from 172.16.0.0/12 to any port 5678 proto tcp` (Docker's address range), or use the shared network below |
 | `HTTP 404` | n8n has no such webhook | Activate the workflow (the production URL is `/webhook/`, not `/webhook-test/`), and check the path `portfolio-contact` and the method `POST` |
 | `HTTP 401` or `HTTP 403` | The token doesn't match | The Header Auth credential needs the name `X-Webhook-Token` and the exact value of `N8N_WEBHOOK_TOKEN` |
 | `HTTP 500` | The workflow ran and failed, usually the email node | Open the workflow's executions in n8n |

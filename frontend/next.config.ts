@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
 	// /about -> about/index.html, which GitHub Pages serves without extra config.
 	trailingSlash: true,
 	images: { unoptimized: true },
+	experimental: {
+		// Each language has its own root layout (ADR 0005), so the 404 for unknown
+		// addresses can't come from a layout: app/global-not-found.tsx is a page of its own.
+		globalNotFound: true,
+	},
 	env: {
 		// Shown in the hero and the footer: which commit this build came from.
 		NEXT_PUBLIC_COMMIT_SHA: process.env.PUBLIC_COMMIT_SHA ?? '',

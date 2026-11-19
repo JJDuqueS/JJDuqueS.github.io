@@ -1,0 +1,19 @@
+[
+	{
+		"id": "unitti",
+		"role": "Full Stack Developer (enfocado en backend)",
+		"company": "Unitti",
+		"start": "2021",
+		"end": "2026",
+		"location": "Remoto",
+		"summary": "Servicios backend para datos en tiempo real, en producción.",
+		"highlights": [
+			"Diseñé y construí microservicios en Python para procesar datos en tiempo real, haciendo el sistema más escalable y confiable en producción.",
+			"Construí y mantuve APIs REST y servicios backend en Python y Node.js, con lógica de negocio, integraciones y flujos de datos.",
+			"Reduje la latencia entre un 40 y un 50% optimizando consultas de PostgreSQL y cuellos de botella del sistema.",
+			"Pasé las cargas pesadas a pipelines asíncronos, para que nunca bloqueen las solicitudes de los usuarios.",
+			"Diagnostiqué y resolví problemas complejos en producción en flujos de datos en tiempo real."
+		],
+		"stack": ["Python", "Node.js", "PostgreSQL"]
+	}
+]

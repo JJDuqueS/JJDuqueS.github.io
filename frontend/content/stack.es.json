@@ -1,0 +1,7 @@
+[
+	{ "group": "Backend", "items": ["Python", "Node.js", "APIs REST", "Microservicios", "Procesamiento asíncrono", "Pipelines de datos"] },
+	{ "group": "Bases de datos", "items": ["PostgreSQL", "MongoDB", "SQL Server", "Optimización de consultas", "Modelado de datos"] },
+	{ "group": "Cloud y DevOps", "items": ["AWS (S3, SQS)", "Docker", "CI/CD", "Linux", "Git"] },
+	{ "group": "Frontend", "items": ["React", "Next.js", "TypeScript", "Vue 3", "Tailwind CSS"] },
+	{ "group": "Testing", "items": ["Pytest", "Jest", "Vitest", "Postman"] }
+]

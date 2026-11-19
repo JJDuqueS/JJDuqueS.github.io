@@ -2,21 +2,40 @@ import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 // Checks the exported site, so run `npm run build` first.
-const pages = [
+const englishPages = [
 	'index.html',
 	'projects/index.html',
 	'projects/sunward/index.html',
 	'projects/this-site/index.html',
 	'about/index.html',
 ];
+// The same pages in Spanish, under /es/ with the same slugs (ADR 0005).
+const spanishPages = englishPages.map((page) => `es/${page}`);
+const pages = [...englishPages, ...spanishPages];
+const langOf = (page: string) => (page.startsWith('es/') ? 'es' : 'en');
+const urlOf = (page: string) => `https://jjduques.github.io/${page.replace(/index\.html$/, '')}`;
 const out = (path: string) => new URL(`../out/${path}`, import.meta.url);
 const read = (page: string) => readFileSync(out(page), 'utf8');
 
 describe.each(pages)('exported page %s', (page) => {
 	const html = read(page);
 
-	it('is prerendered in English', () => {
-		expect(html).toMatch(/<html[^>]*\blang="en"/);
+	it('is prerendered in its language', () => {
+		expect(html).toMatch(new RegExp(`<html[^>]*\\blang="${langOf(page)}"`));
+	});
+
+	it('points to itself as canonical and to both language versions', () => {
+		const english = urlOf(page.replace(/^es\//, ''));
+		const spanish = urlOf(page.startsWith('es/') ? page : `es/${page}`);
+		expect(html).toContain(`<link rel="canonical" href="${urlOf(page)}"/>`);
+		expect(html).toContain(`<link rel="alternate" hrefLang="en" href="${english}"/>`);
+		expect(html).toContain(`<link rel="alternate" hrefLang="es" href="${spanish}"/>`);
+		expect(html).toContain(`<link rel="alternate" hrefLang="x-default" href="${english}"/>`);
+	});
+
+	it('links to the same page in the other language', () => {
+		const counterpart = page.startsWith('es/') ? `/${page.slice(3)}` : `/es/${page}`;
+		expect(html).toContain(`href="${counterpart.replace(/index\.html$/, '')}"`);
 	});
 
 	it('has the tags a page needs to render on phones', () => {
@@ -45,8 +64,9 @@ describe.each(pages)('exported page %s', (page) => {
 		}
 	});
 
-	it('shows the large preview image when shared', () => {
-		expect(html).toContain('<meta property="og:image" content="https://jjduques.github.io/og.png"/>');
+	it('shows the large preview image in its language when shared', () => {
+		const image = langOf(page) === 'es' ? 'og-es.png' : 'og.png';
+		expect(html).toContain(`<meta property="og:image" content="https://jjduques.github.io/${image}"/>`);
 		expect(html).toContain('<meta name="twitter:card" content="summary_large_image"/>');
 	});
 
@@ -60,15 +80,19 @@ describe.each(pages)('exported page %s', (page) => {
 });
 
 describe('exported site', () => {
-	it('gives every page a different title', () => {
-		const titles = pages.map((page) => read(page).match(/<title>([^<]+)<\/title>/)?.[1]);
-		expect(new Set(titles).size).toBe(pages.length);
+	it('gives every page a different title within each language', () => {
+		for (const group of [englishPages, spanishPages]) {
+			const titles = group.map((page) => read(page).match(/<title>([^<]+)<\/title>/)?.[1]);
+			expect(new Set(titles).size).toBe(group.length);
+		}
 	});
 
-	it('draws a 1200x630 PNG preview image', () => {
-		const png = readFileSync(out('og.png'));
-		expect(png.subarray(1, 4).toString()).toBe('PNG');
-		expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+	it('draws a 1200x630 PNG preview image in each language', () => {
+		for (const file of ['og.png', 'og-es.png']) {
+			const png = readFileSync(out(file));
+			expect(png.subarray(1, 4).toString(), file).toBe('PNG');
+			expect([png.readUInt32BE(16), png.readUInt32BE(20)], file).toEqual([1200, 630]);
+		}
 	});
 
 	it('lists every page in the sitemap and points robots.txt at it', () => {
@@ -80,7 +104,8 @@ describe('exported site', () => {
 		expect(read('robots.txt')).toContain('Sitemap: https://jjduques.github.io/sitemap.xml');
 	});
 
-	it('has a 404 page for GitHub Pages', () => {
+	it('has a 404 page for GitHub Pages, in both languages', () => {
+		expect(read('404.html')).toContain('No hay ninguna página');
 		expect(existsSync(out('404.html'))).toBe(true);
 	});
 
@@ -121,5 +146,14 @@ describe('exported site', () => {
 		const html = read('index.html');
 		expect(html).toContain('href="/projects/sunward/"');
 		expect(html).toContain('href="/projects/this-site/"');
+	});
+
+	it('shows the Spanish home page in Spanish', () => {
+		const html = read('es/index.html');
+		for (const text of ['Cómo te llegó esta página', 'Experiencia', 'Trabajo destacado', 'Reduje la latencia', 'Leer el caso de estudio', 'Enviar mensaje']) {
+			expect(html, text).toContain(text);
+		}
+		expect(html).toContain('href="/es/projects/sunward/"');
+		expect(html).toContain('href="/es/about/"');
 	});
 });

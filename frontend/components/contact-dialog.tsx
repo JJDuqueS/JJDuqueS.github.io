@@ -2,10 +2,20 @@
 
 import { useRef, useState } from 'react';
 import { ContactForm } from '@/components/contact-form';
+import { dictionaries, type Lang } from '@/lib/i18n';
 
 // "Email me" opens the contact form in a dialog. The native <dialog> traps focus,
 // closes on Escape and returns focus to the button.
-export function ContactDialogButton({ className, children }: { className: string; children: React.ReactNode }) {
+export function ContactDialogButton({
+	lang,
+	className,
+	children,
+}: {
+	lang: Lang;
+	className: string;
+	children: React.ReactNode;
+}) {
+	const t = dictionaries[lang].contact;
 	const dialog = useRef<HTMLDialogElement>(null);
 	// The form mounts each time the dialog opens, so it starts empty and takes focus.
 	const [open, setOpen] = useState(false);
@@ -36,17 +46,17 @@ export function ContactDialogButton({ className, children }: { className: string
 				<div className="p-6 md:p-8">
 					<div className="flex items-start justify-between gap-4">
 						<h2 id="contact-dialog-title" className="text-2xl font-semibold md:text-3xl">
-							Send me a message
+							{t.dialogTitle}
 						</h2>
 						<button
 							type="button"
 							onClick={() => dialog.current?.close()}
 							className="-mr-2 -mt-1 rounded-full px-3 py-1 text-quiet hover:text-ink"
 						>
-							Close
+							{t.close}
 						</button>
 					</div>
-					<div className="mt-6">{open && <ContactForm autoFocus />}</div>
+					<div className="mt-6">{open && <ContactForm lang={lang} autoFocus />}</div>
 				</div>
 			</dialog>
 		</>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState, type FormEvent } from 'react';
+import { dictionaries, type Lang } from '@/lib/i18n';
 
 // The API's URL comes from the API_URL repository variable at build time (see ci.yml).
 // Empty until the FastAPI service on the laptop is live; the form says so and stays disabled.
@@ -18,7 +19,8 @@ type Status =
 const field =
 	'mt-1.5 w-full rounded-xl border border-segment bg-paper px-4 py-3 text-ink placeholder:text-quiet/70 transition-colors focus:border-accent focus:outline-none disabled:opacity-60';
 
-export function ContactForm({ autoFocus = false }: { autoFocus?: boolean }) {
+export function ContactForm({ lang, autoFocus = false }: { lang: Lang; autoFocus?: boolean }) {
+	const t = dictionaries[lang].contact;
 	const id = useId();
 	const [status, setStatus] = useState<Status>({ kind: 'idle' });
 	const live = endpoint !== '';
@@ -45,28 +47,28 @@ export function ContactForm({ autoFocus = false }: { autoFocus?: boolean }) {
 				form.reset();
 				setStatus({ kind: 'sent', email: data.email.trim() });
 			} else if (response.status === 429) {
-				setStatus({ kind: 'error', message: 'Too many messages from your network. Try again in a few minutes.' });
+				setStatus({ kind: 'error', message: t.tooMany });
 			} else if (response.status === 422 || response.status === 400) {
-				setStatus({ kind: 'error', message: 'Some fields weren’t accepted. Check your email address and message.' });
+				setStatus({ kind: 'error', message: t.invalid });
 			} else {
-				setStatus({ kind: 'error', message: 'My API couldn’t save the message. Try again in a moment.' });
+				setStatus({ kind: 'error', message: t.serverError });
 			}
 		} catch {
-			setStatus({ kind: 'error', message: 'My API couldn’t be reached, so the message wasn’t sent. Try again in a moment.' });
+			setStatus({ kind: 'error', message: t.unreachable });
 		}
 	}
 
 	if (status.kind === 'sent') {
 		return (
 			<div role="status" className="rounded-2xl border border-accent/60 bg-panel p-6">
-				<p className="font-display text-xl font-semibold">Message sent</p>
-				<p className="mt-2 text-quiet">I&apos;ll reply to {status.email}.</p>
+				<p className="font-display text-xl font-semibold">{t.sent}</p>
+				<p className="mt-2 text-quiet">{t.reply(status.email)}</p>
 				<button
 					type="button"
 					onClick={() => setStatus({ kind: 'idle' })}
 					className="mt-4 text-sm text-accent underline"
 				>
-					Send another message
+					{t.another}
 				</button>
 			</div>
 		);
@@ -76,7 +78,7 @@ export function ContactForm({ autoFocus = false }: { autoFocus?: boolean }) {
 		<form onSubmit={onSubmit} noValidate={false} className="grid gap-4" aria-describedby={`${id}-note`}>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<label className="block text-sm font-medium">
-					Name
+					{t.name}
 					<input
 						name="name"
 						required
@@ -88,7 +90,7 @@ export function ContactForm({ autoFocus = false }: { autoFocus?: boolean }) {
 					/>
 				</label>
 				<label className="block text-sm font-medium">
-					Email
+					{t.email}
 					<input
 						name="email"
 						type="email"
@@ -101,7 +103,7 @@ export function ContactForm({ autoFocus = false }: { autoFocus?: boolean }) {
 				</label>
 			</div>
 			<label className="block text-sm font-medium">
-				Message
+				{t.message}
 				<textarea
 					name="message"
 					required
@@ -127,22 +129,22 @@ export function ContactForm({ autoFocus = false }: { autoFocus?: boolean }) {
 					disabled={!live || sending}
 					className="rounded-full bg-accent px-6 py-2.5 font-semibold text-accent-ink transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
 				>
-					{sending ? 'Sending…' : 'Send message'}
+					{sending ? t.sending : t.send}
 				</button>
 				<p id={`${id}-note`} className="text-sm text-quiet" role={status.kind === 'error' ? 'alert' : undefined}>
 					{status.kind === 'error' ? (
 						<>
-							{status.message} Or email me at{' '}
+							{status.message} {t.orEmail}{' '}
 							<a href={`mailto:${EMAIL}`} className="text-ink underline">
 								{EMAIL}
 							</a>
 							.
 						</>
 					) : live ? (
-						'Your message goes to my API and lands in my inbox.'
+						t.live
 					) : (
 						<>
-							The form goes live with my API, the next thing I&apos;m building. Until then, email me at{' '}
+							{t.notLive}{' '}
 							<a href={`mailto:${EMAIL}`} className="text-ink underline">
 								{EMAIL}
 							</a>

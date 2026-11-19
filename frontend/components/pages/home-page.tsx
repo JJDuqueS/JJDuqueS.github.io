@@ -5,20 +5,19 @@ import { ProjectCard } from '@/components/project-card';
 import { Section } from '@/components/section';
 import { buildInfo } from '@/lib/build-info';
 import { getExperience, getProjects, getStack } from '@/lib/content';
+import { dictionaries, type Lang } from '@/lib/i18n';
 import { pageMetadata } from '@/lib/metadata';
 import { hasPortrait, hasResume, person, portraitPath, resumePath } from '@/lib/site';
 import { stackIcon } from '@/lib/stack-icons';
 
-export const metadata = pageMetadata({
-	description:
-		'Juan Duque is a backend-focused Software Engineer in Colombia, building real-time systems in Python and Node.js. Open to remote roles.',
-	path: '/',
-});
+export const homeMetadata = (lang: Lang) =>
+	pageMetadata({ lang, description: dictionaries[lang].home.description, path: '/' });
 
-export default function Home() {
-	const projects = getProjects();
-	const experience = getExperience();
-	const stack = getStack();
+export function HomePage({ lang }: { lang: Lang }) {
+	const t = dictionaries[lang].home;
+	const projects = getProjects(lang);
+	const experience = getExperience(lang);
+	const stack = getStack(lang);
 
 	return (
 		<>
@@ -29,11 +28,10 @@ export default function Home() {
 							Juan José Duque S.
 						</h1>
 						<p className="mt-6 max-w-2xl text-xl leading-snug md:text-2xl">
-							Software Engineer building real-time backends in Python and Node.js.
+							{t.lead}
 						</p>
 						<p className="mt-3 max-w-2xl text-quiet">
-							More than four years on production systems: microservices, REST APIs and asynchronous pipelines.
-							Based in {person.location}, working in English at a C1 level, open to remote roles.
+							{t.bio(person.location)}
 						</p>
 					</div>
 					{hasPortrait && (
@@ -57,13 +55,15 @@ export default function Home() {
 								download
 								className="inline-flex items-center rounded-full bg-accent px-5 py-2.5 font-semibold text-accent-ink no-underline transition-transform hover:-translate-y-0.5 motion-reduce:transition-none"
 							>
-								Download résumé (PDF)
+								{t.resume}
 							</a>
 						</li>
 					)}
 					<li>
-						<ContactDialogButton className="inline-flex cursor-pointer items-center rounded-full border border-segment px-5 py-2.5 font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
-							Email me
+						<ContactDialogButton
+							lang={lang}
+							className="inline-flex cursor-pointer items-center rounded-full border border-segment px-5 py-2.5 font-semibold text-ink transition-colors hover:border-accent hover:text-accent">
+							{t.emailMe}
 						</ContactDialogButton>
 					</li>
 					<li>
@@ -75,15 +75,20 @@ export default function Home() {
 						>
 							LinkedIn
 							<NewTabIcon />
-							<span className="sr-only">(opens in a new tab)</span>
+							<span className="sr-only">{t.newTab}</span>
 						</a>
 					</li>
 				</ul>
 
-				<LiveFlow commit={buildInfo.commit} builtAt={buildInfo.builtAt} builtAtLabel={buildInfo.builtAtLabel} />
+				<LiveFlow
+					lang={lang}
+					commit={buildInfo.commit}
+					builtAt={buildInfo.builtAt}
+					builtAtLabel={buildInfo.builtAtLabel(lang)}
+				/>
 			</div>
 
-			<Section id="experience" title="Experience">
+			<Section id="experience" title={t.experience}>
 				<ul className="grid gap-12">
 					{experience.map((job) => (
 						<li key={job.id}>
@@ -91,7 +96,7 @@ export default function Home() {
 								{job.role}, <span className="text-accent">{job.company}</span>
 							</h3>
 							<p className="mt-1 text-quiet">
-								{job.start} to {job.end}, {job.location.toLowerCase()}
+								{t.jobDates(job.start, job.end, job.location)}
 							</p>
 							<ul className="mt-5 grid max-w-3xl gap-3">
 								{job.highlights.map((highlight) => (
@@ -106,15 +111,15 @@ export default function Home() {
 				</ul>
 			</Section>
 
-			<Section id="work" title="Selected work">
+			<Section id="work" title={t.work}>
 				<div className="grid gap-5 lg:grid-cols-2">
 					{projects.map((project) => (
-						<ProjectCard key={project.slug} project={project} />
+						<ProjectCard key={project.slug} lang={lang} project={project} />
 					))}
 				</div>
 			</Section>
 
-			<Section id="stack" title="Stack">
+			<Section id="stack" title={t.stack}>
 				<dl className="grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
 					{stack.map(({ group, items }) => (
 						<div key={group} className="border-t border-rule pt-4">
@@ -140,26 +145,26 @@ export default function Home() {
 				</dl>
 			</Section>
 
-			<Section id="contact" title="Contact">
+			<Section id="contact" title={t.contact}>
 				<div className="grid gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)]">
 					<div>
 						<p className="text-xl leading-snug md:text-2xl">
-							I&apos;m open to remote roles, wherever the team is. Send me a message, or write to{' '}
+							{t.contactLead}{' '}
 							<a href={`mailto:${person.email}`} className="text-accent underline">
 								{person.email}
 							</a>
 							.
 						</p>
 						<p className="mt-4 text-quiet">
-							You can also find me on{' '}
+							{t.alsoOn}{' '}
 							<a href={person.linkedin} target="_blank" rel="me noopener noreferrer" className="text-ink underline">
-								LinkedIn<span className="sr-only"> (opens in a new tab)</span>
+								LinkedIn<span className="sr-only"> {t.newTab}</span>
 							</a>
 							{hasResume && (
 								<>
-									, or{' '}
+									, {t.orDownload}{' '}
 									<a href={resumePath} download className="text-ink underline">
-										download my résumé
+										{t.downloadResume}
 									</a>
 								</>
 							)}
@@ -167,7 +172,7 @@ export default function Home() {
 						</p>
 					</div>
 					<div className="relative">
-						<ContactForm />
+						<ContactForm lang={lang} />
 					</div>
 				</div>
 			</Section>

@@ -6,11 +6,12 @@ Actualiza este archivo cuando se cierre una decisión pendiente.
 Software Engineer con enfoque backend. Stack principal: Python y Node.js en backend; React, Vue y TypeScript en frontend; PostgreSQL; Docker y AWS (S3, SQS). Sin experiencia en Azure: no mencionarlo. Más de 4 años como Full Stack Developer (backend-focused) en Unitti (2021–2026, remoto). Inglés C1. Basado en Colombia (UTC−5). Abierto a cualquier rol remoto.
 
 ## Qué estamos construyendo
-Un portafolio personal en inglés (español opcional), estático y rápido. Esquema híbrido (ADR 0002 y 0004): el frontend se publica en GitHub Pages y la API corre en un laptop ASUS X200MA en mi casa, usado como homelab: Celeron N2830 (x86_64), 2 GB de RAM, HDD de 500 GB, Ubuntu. La infraestructura del propio sitio es un caso de estudio central: la página About explica las decisiones de arquitectura con sus pros y contras.
+Un portafolio personal en inglés y español (ADR 0005), estático y rápido. Esquema híbrido (ADR 0002 y 0004): el frontend se publica en GitHub Pages y la API corre en un laptop ASUS X200MA en mi casa, usado como homelab: Celeron N2830 (x86_64), 2 GB de RAM, HDD de 500 GB, Ubuntu. La infraestructura del propio sitio es un caso de estudio central: la página About explica las decisiones de arquitectura con sus pros y contras.
 
 ## Arquitectura decidida
 - Frontend con Next.js (App Router), React, TypeScript, Tailwind CSS y Motion (ADR 0003, reemplaza al 0001), exportado como sitio estático (`output: 'export'`, `trailingSlash: true`) con metadatos Open Graph por página. Nada de funciones de servidor de Next.js (route handlers, middleware, optimización de imágenes): el export estático no las soporta. Si algún día hacen falta, se migra a Vercel (ADR 0003).
-- SEO: `frontend/app/og.png/route.tsx` dibuja en el build la imagen de vista previa (1200×630, con la paleta, las fuentes y la foto) y todas las páginas la referencian (`lib/metadata.ts`, `summary_large_image`). `app/sitemap.ts` y `app/robots.ts` generan `sitemap.xml` y `robots.txt`.
+- SEO: `frontend/lib/og-image.tsx` dibuja en el build la imagen de vista previa de cada idioma (1200×630, con la paleta, las fuentes y la foto), servida por `app/og.png` y `app/og-es.png`; todas las páginas la referencian (`lib/metadata.ts`, `summary_large_image`). `app/sitemap.ts` (ambos idiomas, con alternates) y `app/robots.ts` generan `sitemap.xml` y `robots.txt`.
+- Idiomas (ADR 0005): inglés en la raíz (`/about/`) y español en `/es/` (`/es/about/`) con los mismos slugs. Un root layout por idioma (`app/(en)`, `app/(es)`) para servir el `<html lang>` correcto; las páginas son componentes compartidos en `frontend/components/pages/` que reciben `lang`. Textos de interfaz en `frontend/lib/i18n.ts` (un test falla si falta la traducción); contenido en español junto al inglés como `*.es.md` y `*.es.json`. `hreflang`, `og:locale` e imagen de vista previa por idioma (`/og.png`, `/og-es.png`). El 404 es `app/global-not-found.tsx` (bilingüe, flag experimental `globalNotFound`). El selector EN/ES recuerda la elección en `localStorage`; sin elección, a quien tiene el navegador en el otro idioma se le ofrece, nunca se le redirige. Todo cambio de contenido se escribe en los dos idiomas.
 - Contenido en `frontend/content/` (proyectos en Markdown con frontmatter validado con Zod, experiencia en JSON), leído en el build. No hay tabla `projects` ni `GET /api/projects`.
 - API FastAPI en `api/` (Python 3.13, un solo worker, sin ORM) con `GET /api/health` (uptime, carga y RAM, sin datos sensibles) y `POST /api/contact`. Detalles en `api/README.md`.
 - SQLite dedicado al portafolio, solo para mensajes de contacto. Directorio montado en Docker (modo WAL), migraciones SQL numeradas con `PRAGMA user_version`, `busy_timeout`, backups con `VACUUM INTO`.
@@ -47,7 +48,7 @@ Vive en `frontend/content/experience.json` y sale del CV Backend. No inventar em
 - En la API: validación con Pydantic, rate limiting en memoria (por IP si llega `X-Forwarded-For`, si no un límite compartido), guardar primero y notificar después vía webhook de n8n con reintentos, errores sin detalles internos, retención de 180 días.
 
 ## Fuera de alcance del MVP
-Demos en vivo, versión en español, selector de tema claro/oscuro, analítica, panel de edición, SSR y bases de datos servidor.
+Demos en vivo, selector de tema claro/oscuro, analítica, panel de edición, SSR y bases de datos servidor.
 
 ## Decisiones pendientes
 - Dominio: nombre y extensión (`.dev` o `.com`), con DNS en Cloudflare. No bloquea el MVP: el sitio funciona en `jjduques.github.io` y la API en `ts.net`. Con dominio, la API pasa a Cloudflare Tunnel (ADR 0004).

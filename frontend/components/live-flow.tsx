@@ -3,17 +3,20 @@
 import Link from 'next/link';
 import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'motion/react';
 import { useEffect, useState, type CSSProperties } from 'react';
+import { dictionaries, type Lang, localePath } from '@/lib/i18n';
 import { formatMs, traceFromTiming, type Trace } from '@/lib/timing';
 
 type NodeId = 'you' | 'cdn' | 'api' | 'db';
 type Stage = 'waiting' | 'out' | 'server' | 'in' | 'done';
 
-const nodes: { id: NodeId; name: string; place: string; live: boolean }[] = [
-	{ id: 'you', name: 'You', place: 'Your browser', live: true },
-	{ id: 'cdn', name: 'GitHub Pages', place: 'A CDN edge near you', live: true },
-	{ id: 'api', name: 'API', place: 'A 2014 laptop working as a homelab', live: false },
-	{ id: 'db', name: 'SQLite', place: 'One file on that laptop', live: false },
+const nodes: { id: NodeId; live: boolean }[] = [
+	{ id: 'you', live: true },
+	{ id: 'cdn', live: true },
+	{ id: 'api', live: false },
+	{ id: 'db', live: false },
 ];
+
+type FlowText = (typeof dictionaries)['en']['flow'];
 
 // The real trip takes a few milliseconds, so the replay stretches it to about this long.
 const REPLAY_SECONDS = 2.4;
@@ -21,7 +24,18 @@ const MIN_STEP_SECONDS = 0.35;
 
 const sleep = (seconds: number) => new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 
-export function LiveFlow({ commit, builtAt, builtAtLabel }: { commit?: string; builtAt: string; builtAtLabel: string }) {
+export function LiveFlow({
+	lang,
+	commit,
+	builtAt,
+	builtAtLabel,
+}: {
+	lang: Lang;
+	commit?: string;
+	builtAt: string;
+	builtAtLabel: string;
+}) {
+	const t = dictionaries[lang].flow;
 	const reducedMotion = useReducedMotion();
 	const [trace, setTrace] = useState<Trace | null | undefined>(undefined);
 	const [stage, setStage] = useState<Stage>('waiting');
@@ -86,9 +100,9 @@ export function LiveFlow({ commit, builtAt, builtAtLabel }: { commit?: string; b
 		<section aria-labelledby="flow-title" className="mt-20 md:mt-28">
 			<div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
 				<h2 id="flow-title" className="text-2xl font-semibold md:text-3xl">
-					How this page reached you
+					{t.title}
 				</h2>
-				<p className="text-sm text-quiet">Select a step to see what it does.</p>
+				<p className="text-sm text-quiet">{t.hint}</p>
 			</div>
 
 			<ol className="mt-8 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(2.5rem,0.6fr)_minmax(0,1fr)_minmax(2.5rem,0.6fr)_minmax(0,1fr)_minmax(2.5rem,0.6fr)_minmax(0,1fr)]">
@@ -96,6 +110,7 @@ export function LiveFlow({ commit, builtAt, builtAtLabel }: { commit?: string; b
 					<FlowStep key={node.id}>
 						<NodeButton
 							node={node}
+							t={t}
 							index={index}
 							selected={selected === node.id}
 							busy={node.id === 'cdn' && shownStage === 'server'}
@@ -108,11 +123,11 @@ export function LiveFlow({ commit, builtAt, builtAtLabel }: { commit?: string; b
 								label={
 									node.id === 'you'
 										? trace === null
-											? 'not measured'
+											? t.notMeasured
 											: done && trace
 												? formatMs(trace.totalMs)
-												: 'measuring'
-										: 'next'
+												: t.measuring
+										: t.next
 								}
 								progress={node.id === 'you' ? progress : undefined}
 								moving={node.id === 'you' && moving}
@@ -135,6 +150,8 @@ export function LiveFlow({ commit, builtAt, builtAtLabel }: { commit?: string; b
 					>
 						{selected === 'you' && (
 							<YouDetails
+								t={t}
+								lang={lang}
 								trace={trace}
 								done={done}
 								slowdown={canAnimate && !reducedMotion ? slowdown : 0}
@@ -146,42 +163,35 @@ export function LiveFlow({ commit, builtAt, builtAtLabel }: { commit?: string; b
 							/>
 						)}
 						{selected === 'cdn' && (
-							<Details title="GitHub Pages serves a file that was built in advance">
+							<Details title={t.cdnTitle}>
 								<p>
-									GitHub Actions built this page
+									{t.cdnBuilt}
 									{commit && (
 										<>
 											{' '}
-											from commit <span className="tabular-nums text-ink">{commit}</span>
+											{t.cdnFromCommit} <span className="tabular-nums text-ink">{commit}</span>
 										</>
 									)}{' '}
-									on <time dateTime={builtAt}>{builtAtLabel}</time>, after the linter, the type checker and the
-									tests passed. Nothing runs on a server when you ask for it.
+									{t.cdnOn} <time dateTime={builtAt}>{builtAtLabel}</time>, {t.cdnAfter}
 								</p>
-								<p>
-									The pages live on a CDN instead of my laptop on purpose: they stay up when the power or the
-									internet goes out at home.
-								</p>
+								<p>{t.cdnWhy}</p>
 							</Details>
 						)}
 						{selected === 'api' && (
-							<Details title="Next: an API on a 2014 laptop" badge="Not live yet">
+							<Details title={t.apiTitle} badge={t.notLiveBadge}>
+								<p>{t.apiText}</p>
 								<p>
-									A small FastAPI service will run on an ASUS X200MA with a Celeron and 2 GB of RAM, published
-									with Tailscale Funnel so no ports are open on my home network. It will receive the contact form
-									and report its own health.
-								</p>
-								<p>
-									When it&apos;s live, this step will show its real status. <Link href="/about/" className="text-accent underline">Why a laptop</Link>
+									{t.apiWhen}{' '}
+									<Link href={localePath(lang, '/about/')} className="text-accent underline">
+										{t.apiWhy}
+									</Link>
 								</p>
 							</Details>
 						)}
 						{selected === 'db' && (
-							<Details title="Next: one SQLite file" badge="Not live yet">
+							<Details title={t.dbTitle} badge={t.notLiveBadge}>
 								<p>
-									It will store contact messages and nothing else. No database server competing for 2 GB of RAM,
-									and backups taken with <span className="text-ink">VACUUM INTO</span>, because copying a live
-									database file isn&apos;t safe.
+									{t.dbBefore} <span className="text-ink">VACUUM INTO</span>, {t.dbAfter}
 								</p>
 							</Details>
 						)}
@@ -199,6 +209,7 @@ function FlowStep({ children }: { children: React.ReactNode }) {
 
 function NodeButton({
 	node,
+	t,
 	index,
 	selected,
 	busy,
@@ -206,6 +217,7 @@ function NodeButton({
 	onSelect,
 }: {
 	node: (typeof nodes)[number];
+	t: FlowText;
 	index: number;
 	selected: boolean;
 	busy: boolean;
@@ -235,10 +247,10 @@ function NodeButton({
 						node.live ? 'bg-accent' : 'border border-quiet bg-transparent',
 					].join(' ')}
 				/>
-				<span className="font-display text-lg font-semibold leading-tight">{node.name}</span>
+				<span className="font-display text-lg font-semibold leading-tight">{t.nodes[node.id].name}</span>
 			</span>
-			<span className="mt-1 block pl-[1.125rem] text-sm leading-snug text-quiet">{node.place}</span>
-			{!node.live && <span className="sr-only">(not live yet)</span>}
+			<span className="mt-1 block pl-[1.125rem] text-sm leading-snug text-quiet">{t.nodes[node.id].place}</span>
+			{!node.live && <span className="sr-only">{t.notLiveSr}</span>}
 		</motion.button>
 	);
 }
@@ -316,12 +328,16 @@ function Details({ title, badge, children }: { title: string; badge?: string; ch
 }
 
 function YouDetails({
+	t,
+	lang,
 	trace,
 	done,
 	slowdown,
 	onReplay,
 	replaying,
 }: {
+	t: FlowText;
+	lang: Lang;
 	trace: Trace | null | undefined;
 	done: boolean;
 	slowdown: number;
@@ -329,31 +345,37 @@ function YouDetails({
 	replaying: boolean;
 }) {
 	if (trace === undefined) {
-		return <Details title="Measuring your visit">{<p>Your browser is still timing this page.</p>}</Details>;
+		return (
+			<Details title={t.measuringTitle}>
+				<p>{t.measuringText}</p>
+			</Details>
+		);
 	}
 	if (trace === null) {
 		return (
-			<Details title="Your browser didn't share its timing">
-				<p>Some browsers and privacy settings hide it. The page still came from GitHub Pages, as the next step shows.</p>
+			<Details title={t.noTimingTitle}>
+				<p>{t.noTimingText}</p>
 			</Details>
 		);
 	}
 	if (trace.fromCache) {
 		return (
-			<Details title={`${formatMs(trace.totalMs)}, straight from your browser`}>
-				<p>Your browser had this page saved, so nothing crossed the network this time. Reload without the cache to see the full trip.</p>
+			<Details title={t.cachedTitle(formatMs(trace.totalMs))}>
+				<p>{t.cachedText}</p>
 			</Details>
 		);
 	}
 
 	const phases = [...trace.outbound, trace.server, trace.inbound].filter((phase) => phase.ms >= 0.5);
-	const kb = trace.htmlKb ? `${trace.htmlKb.toFixed(1)} KB of HTML` : 'the HTML';
+	const kb = trace.htmlKb
+		? trace.htmlKb.toLocaleString(lang === 'es' ? 'es-CO' : 'en-US', { maximumFractionDigits: 1, minimumFractionDigits: 1 })
+		: null;
 
 	return (
 		<div>
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<h3 className="text-xl font-semibold md:text-2xl">
-					{done ? `${formatMs(trace.totalMs)} from your request to the last byte of ${kb}` : 'Following your request'}
+					{done ? t.doneTitle(formatMs(trace.totalMs), kb) : t.following}
 				</h3>
 				<button
 					type="button"
@@ -361,7 +383,7 @@ function YouDetails({
 					disabled={replaying}
 					className="rounded-full border border-segment px-3.5 py-1.5 text-sm text-ink transition-colors hover:border-accent hover:text-accent disabled:cursor-default disabled:opacity-40 disabled:hover:border-segment disabled:hover:text-ink"
 				>
-					Replay the trip
+					{t.replay}
 				</button>
 			</div>
 
@@ -381,14 +403,14 @@ function YouDetails({
 				{phases.map((phase) => (
 					<li key={phase.id} className="grid grid-cols-[0.75rem_1fr_auto] items-center gap-3">
 						<span aria-hidden="true" className={`size-3 rounded-sm ${phase.id === 'server' ? 'bg-accent' : 'bg-segment'}`} />
-						<span className={phase.id === 'server' ? 'text-ink' : 'text-quiet'}>{phase.label}</span>
+						<span className={phase.id === 'server' ? 'text-ink' : 'text-quiet'}>{t.phases[phase.id]}</span>
 						<span className="tabular-nums text-quiet">{formatMs(phase.ms)}</span>
 					</li>
 				))}
 			</ul>
 
 			{slowdown > 1 && (
-				<p className="mt-4 text-sm text-quiet">The animation replays your real timings about {slowdown}× slower, so you can follow it.</p>
+				<p className="mt-4 text-sm text-quiet">{t.slower(slowdown)}</p>
 			)}
 		</div>
 	);

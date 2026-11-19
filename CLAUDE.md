@@ -10,6 +10,7 @@ Un portafolio personal en inglés (español opcional), estático y rápido. Esqu
 
 ## Arquitectura decidida
 - Frontend con Next.js (App Router), React, TypeScript, Tailwind CSS y Motion (ADR 0003, reemplaza al 0001), exportado como sitio estático (`output: 'export'`, `trailingSlash: true`) con metadatos Open Graph por página. Nada de funciones de servidor de Next.js (route handlers, middleware, optimización de imágenes): el export estático no las soporta. Si algún día hacen falta, se migra a Vercel (ADR 0003).
+- SEO: `frontend/app/og.png/route.tsx` dibuja en el build la imagen de vista previa (1200×630, con la paleta, las fuentes y la foto) y todas las páginas la referencian (`lib/metadata.ts`, `summary_large_image`). `app/sitemap.ts` y `app/robots.ts` generan `sitemap.xml` y `robots.txt`.
 - Contenido en `frontend/content/` (proyectos en Markdown con frontmatter validado con Zod, experiencia en JSON), leído en el build. No hay tabla `projects` ni `GET /api/projects`.
 - API FastAPI en `api/` (Python 3.13, un solo worker, sin ORM) con `GET /api/health` (uptime, carga y RAM, sin datos sensibles) y `POST /api/contact`. Detalles en `api/README.md`.
 - SQLite dedicado al portafolio, solo para mensajes de contacto. Directorio montado en Docker (modo WAL), migraciones SQL numeradas con `PRAGMA user_version`, `busy_timeout`, backups con `VACUUM INTO`.
@@ -18,6 +19,7 @@ Un portafolio personal en inglés (español opcional), estático y rápido. Esqu
 - API en el laptop expuesta con Tailscale Funnel (ADR 0004) en `https://<máquina>.<tailnet>.ts.net`: Tailscale corre en el host, Funnel termina HTTPS y reenvía a `127.0.0.1:8080`, donde Docker publica la API. Sin Caddy y sin Cloudflare Tunnel mientras no haya dominio. No se abren puertos en el router. CORS solo para el origen del sitio.
 - CI/CD: GitHub Actions ejecuta lint, tests y build; solo si pasan, el job `deploy` publica `frontend/out` en GitHub Pages (solo desde `main`). Para la API: ruff y pytest en cada push; desde `main`, imagen `linux/amd64` en `ghcr.io/jjduques/portfolio-api` que el laptop descarga (`deploy/update.sh`). Nunca se compila en el servidor.
 - Docker Compose en `deploy/` para el laptop; guía de instalación paso a paso en `deploy/README.md`.
+- `README.md` en la raíz, en inglés, para quien abra el repositorio: arquitectura (diagrama Mermaid), stack, lo destacable, ADRs y cómo correrlo.
 - Monitor de disponibilidad externo.
 
 ## Páginas
@@ -40,7 +42,7 @@ Vive en `frontend/content/experience.json` y sale del CV Backend. No inventar em
 
 ## Formulario de contacto
 - El botón "Email me" del hero abre el formulario en un diálogo; también está en la sección Contact (`frontend/components/contact-form.tsx`).
-- Envía `POST` JSON a `${NEXT_PUBLIC_API_URL}/api/contact`. CI toma la URL de la variable de repositorio `API_URL` (por ejemplo `https://<máquina>.<tailnet>.ts.net`, sin `/` final). Mientras esté vacía, el formulario se ve pero está deshabilitado y ofrece el correo.
+- Envía `POST` JSON a `${NEXT_PUBLIC_API_URL}/api/contact`. CI toma la URL de la variable de repositorio `API_URL` (por ejemplo `https://<máquina>.<tailnet>.ts.net`, sin `/` final). Mientras esté vacía, el formulario se ve pero está deshabilitado y ofrece el correo. El build falla si `API_URL` no es un origen HTTPS público sin ruta (`frontend/lib/api-url.ts`); con `next dev` acepta `http://127.0.0.1`.
 - Contrato que debe cumplir la API: cuerpo `{ name, email, message, website }`. `website` es el honeypot: si viene con algo, responder 2xx y descartar. Límites: name ≤ 100, email ≤ 254, message 10–5000. Respuestas: 2xx enviado, 422 datos inválidos, 429 rate limit, 5xx error. CORS para `https://jjduques.github.io`.
 - En la API: validación con Pydantic, rate limiting en memoria (por IP si llega `X-Forwarded-For`, si no un límite compartido), guardar primero y notificar después vía webhook de n8n con reintentos, errores sin detalles internos, retención de 180 días.
 

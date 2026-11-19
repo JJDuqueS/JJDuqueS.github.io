@@ -45,6 +45,11 @@ describe.each(pages)('exported page %s', (page) => {
 		}
 	});
 
+	it('shows the large preview image when shared', () => {
+		expect(html).toContain('<meta property="og:image" content="https://jjduques.github.io/og.png"/>');
+		expect(html).toContain('<meta name="twitter:card" content="summary_large_image"/>');
+	});
+
 	it('has exactly one main heading', () => {
 		expect(html.match(/<h1[\s>]/g)).toHaveLength(1);
 	});
@@ -58,6 +63,21 @@ describe('exported site', () => {
 	it('gives every page a different title', () => {
 		const titles = pages.map((page) => read(page).match(/<title>([^<]+)<\/title>/)?.[1]);
 		expect(new Set(titles).size).toBe(pages.length);
+	});
+
+	it('draws a 1200x630 PNG preview image', () => {
+		const png = readFileSync(out('og.png'));
+		expect(png.subarray(1, 4).toString()).toBe('PNG');
+		expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1200, 630]);
+	});
+
+	it('lists every page in the sitemap and points robots.txt at it', () => {
+		const sitemap = read('sitemap.xml');
+		for (const page of pages) {
+			const path = page.replace(/index\.html$/, '');
+			expect(sitemap).toContain(`<loc>https://jjduques.github.io/${path}</loc>`);
+		}
+		expect(read('robots.txt')).toContain('Sitemap: https://jjduques.github.io/sitemap.xml');
 	});
 
 	it('has a 404 page for GitHub Pages', () => {

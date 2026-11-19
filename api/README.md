@@ -29,6 +29,7 @@ To see the form working locally, build the site with `NEXT_PUBLIC_API_URL=http:/
 - **Privacy**: no IP address or user agent is stored, and access logs are off.
 - **Migrations**: `app/migrations/NNNN_name.sql`, applied in order at startup and tracked with `PRAGMA user_version`. Add a new file; never edit an applied one.
 - **Backups**: `python -m app.backup DESTINATION` writes a consistent copy with `VACUUM INTO`.
+- **Webhook check**: `python -m app.check_webhook` sends one test message to n8n and explains any failure. The same explanation goes to the log when a notification fails.
 
 ## Dependencies
 

@@ -49,7 +49,7 @@ Create a workflow with two nodes and **activate** it, so it listens on `/webhook
 1. **Webhook**: method `POST`, path `portfolio-contact`, authentication **Header Auth** with a credential whose name is `X-Webhook-Token` and whose value is the token from `.env`. Respond: **When last node finishes**, so a failed email returns an error and the API tries again later.
 2. **Send Email** (or Gmail) to yourself. Subject `Portfolio: message from {{ $json.body.name }}`, reply-to `{{ $json.body.email }}`, body `{{ $json.body.message }}`.
 
-The API calls `http://host.docker.internal:5678/webhook/portfolio-contact`. That works when n8n publishes port 5678 on the host. If n8n only listens on `127.0.0.1`, publish it on the Docker bridge as well, or change `N8N_WEBHOOK_URL`.
+The API calls `http://host.docker.internal:5678/webhook/portfolio-contact`. That works when n8n publishes port 5678 on the host (`"5678:5678"` in its Compose file) and no firewall blocks it. If it doesn't, see "When n8n doesn't get the message" below.
 
 Check it from the laptop:
 
@@ -60,6 +60,55 @@ docker compose logs --tail 20 api
 ```
 
 The email should arrive within seconds. If n8n is down, the message stays in the database and the API retries every 15 minutes, up to 8 times.
+
+### When n8n doesn't get the message
+
+Run the check from inside the container. It sends one test message and says what failed:
+
+```bash
+docker compose exec api python -m app.check_webhook
+```
+
+| It says | Cause | Fix |
+| --- | --- | --- |
+| `N8N_WEBHOOK_URL is empty` | `.env` isn't filled in, or the container started before you edited it | Edit `.env`, then `docker compose up -d` |
+| `ConnectError (... Name or service not known` | The container can't resolve `host.docker.internal` | Use this repository's `compose.yaml`, which sets `extra_hosts` |
+| `ConnectError (... Connection refused` | Nothing answers on that port from Docker: n8n is stopped, uses another port, or publishes it as `127.0.0.1:5678:5678` | `docker ps` to check n8n; publish the port as `"5678:5678"`, or use the shared network below |
+| `ConnectTimeout` | A firewall drops traffic from Docker to the host | `sudo ufw allow from 172.16.0.0/12 to any port 5678 proto tcp` (Docker's address range), or use the shared network below |
+| `HTTP 404` | n8n has no such webhook | Activate the workflow (the production URL is `/webhook/`, not `/webhook-test/`), and check the path `portfolio-contact` and the method `POST` |
+| `HTTP 401` or `HTTP 403` | The token doesn't match | The Header Auth credential needs the name `X-Webhook-Token` and the exact value of `N8N_WEBHOOK_TOKEN` |
+| `HTTP 500` | The workflow ran and failed, usually the email node | Open the workflow's executions in n8n |
+| `ReadTimeout` | The workflow took more than 10 seconds | Set the Webhook node to respond **Immediately**; a failed email then won't be retried |
+
+**Shared network, when the host route doesn't work.** Put the API and n8n on one Docker network, so the API calls n8n by name and the host's ports and firewall stop mattering:
+
+```bash
+docker network create portfolio-n8n
+```
+
+In n8n's Compose file, add the network to the n8n service and declare it:
+
+```yaml
+services:
+  n8n:
+    networks: [default, portfolio-n8n]
+networks:
+  portfolio-n8n:
+    external: true
+```
+
+In `/opt/portfolio-api`, create `compose.override.yaml`, which Compose loads on its own:
+
+```yaml
+services:
+  api:
+    networks: [default, portfolio-n8n]
+networks:
+  portfolio-n8n:
+    external: true
+```
+
+Set `N8N_WEBHOOK_URL=http://n8n:5678/webhook/portfolio-contact` in `.env`, using the n8n service's name. Then run `docker compose up -d` in both folders and repeat the check.
 
 ## 5. Publish it with Tailscale Funnel
 

@@ -2,7 +2,7 @@ import httpx
 
 from app import db
 from app.config import Settings
-from app.notify import notify_pending
+from app.notify import describe_failure, notify_pending
 
 
 def settings_with_webhook(settings: Settings) -> Settings:
@@ -53,3 +53,14 @@ def test_does_nothing_without_a_webhook(settings: Settings) -> None:
     db.migrate(settings.database_path)
     db.insert_message(settings.database_path, "Ada", "ada@example.com", "Hello there, Juan.")
     assert notify_pending(settings) == 0
+
+
+def test_failures_say_where_to_look_without_the_url() -> None:
+    request = httpx.Request("POST", "http://n8n.test/webhook/secret-path")
+    not_found = httpx.HTTPStatusError("x", request=request, response=httpx.Response(404, request=request))
+    assert describe_failure(not_found).startswith("HTTP 404 (n8n has no such webhook")
+    assert describe_failure(httpx.ConnectTimeout("timed out")).startswith("ConnectTimeout")
+    refused = describe_failure(httpx.ConnectError("[Errno 111] Connection refused"))
+    assert "Connection refused" in refused
+    for text in (describe_failure(not_found), refused):
+        assert "secret-path" not in text

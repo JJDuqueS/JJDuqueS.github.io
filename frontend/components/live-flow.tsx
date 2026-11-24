@@ -1,28 +1,30 @@
 'use client';
 
 import Link from 'next/link';
-import { AnimatePresence, animate, motion, useMotionValue, useReducedMotion } from 'motion/react';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { AnimatePresence, animate, motion, type MotionValue, useMotionValue, useReducedMotion } from 'motion/react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { fetchHealth, formatDuration, type HealthResult } from '@/lib/api-health';
 import { dictionaries, type Lang, localePath } from '@/lib/i18n';
 import { formatMs, traceFromTiming, type Trace } from '@/lib/timing';
 
+// Set at build time from the API_URL repository variable (lib/api-url.ts checks it).
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
+
 type NodeId = 'you' | 'cdn' | 'api' | 'db';
-type Stage = 'waiting' | 'out' | 'server' | 'in' | 'done';
-
-const nodes: { id: NodeId; live: boolean }[] = [
-	{ id: 'you', live: true },
-	{ id: 'cdn', live: true },
-	{ id: 'api', live: false },
-	{ id: 'db', live: false },
-];
-
+type Stage = 'waiting' | 'out' | 'server' | 'in' | 'api-out' | 'db' | 'api-in' | 'done';
 type FlowText = (typeof dictionaries)['en']['flow'];
 
-// The real trip takes a few milliseconds, so the replay stretches it to about this long.
+// The real trips take milliseconds, so the replay stretches the page trip to about this long
+// and plays the API trip at the same scale.
 const REPLAY_SECONDS = 2.4;
 const MIN_STEP_SECONDS = 0.35;
+const MAX_API_STEP_SECONDS = 1.6;
 
 const sleep = (seconds: number) => new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
+
+// 0.4 -> "<1 ms", 2.6 -> "3 ms"
+const formatDbMs = (ms: number) => (ms < 1 ? '<1 ms' : formatMs(ms));
 
 export function LiveFlow({
 	lang,
@@ -38,10 +40,14 @@ export function LiveFlow({
 	const t = dictionaries[lang].flow;
 	const reducedMotion = useReducedMotion();
 	const [trace, setTrace] = useState<Trace | null | undefined>(undefined);
+	const [health, setHealth] = useState<HealthResult | undefined>(API_URL ? undefined : { kind: 'none' });
 	const [stage, setStage] = useState<Stage>('waiting');
 	const [selected, setSelected] = useState<NodeId>('you');
 	const [run, setRun] = useState(0);
-	const progress = useMotionValue(0);
+	const pageProgress = useMotionValue(0);
+	const apiProgress = useMotionValue(0);
+	const dbProgress = useMotionValue(0);
+	const healthRequest = useRef<Promise<HealthResult>>(Promise.resolve({ kind: 'none' }));
 
 	// Read the browser's timing for this page once it has arrived.
 	useEffect(() => {
@@ -54,33 +60,71 @@ export function LiveFlow({
 		return () => window.removeEventListener('load', read);
 	}, []);
 
+	// Ask the laptop how it is doing, on load and on every replay. Declared before the
+	// animation so the request is already on its way when the trip starts.
+	useEffect(() => {
+		if (!API_URL) return;
+		let cancelled = false;
+		healthRequest.current = fetchHealth(API_URL).then((result) => {
+			if (!cancelled) setHealth(result);
+			return result;
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [run]);
+
 	const steps = trace
 		? [trace.outbound.reduce((sum, phase) => sum + phase.ms, 0), trace.server.ms, trace.inbound.ms]
 		: [0, 0, 0];
 	const realTotal = steps[0] + steps[1] + steps[2];
 	const durations = steps.map((ms) => Math.max(MIN_STEP_SECONDS, realTotal > 0 ? (REPLAY_SECONDS * ms) / realTotal : 0));
-	const slowdown = trace && trace.totalMs > 0 ? Math.round((durations[0] + durations[1] + durations[2]) * 1000 / trace.totalMs) : 0;
+	const secondsPerMs = realTotal > 0 ? (durations[0] + durations[1] + durations[2]) / realTotal : 0;
+	const slowdown = trace && trace.totalMs > 0 ? Math.round(((durations[0] + durations[1] + durations[2]) * 1000) / trace.totalMs) : 0;
 	const canAnimate = Boolean(trace && !trace.fromCache && realTotal > 0);
 
-	// One orchestrated moment: a packet leaves your browser, waits at the CDN and comes back.
+	// One orchestrated moment: a packet fetches the page from the CDN and comes back,
+	// then a second one asks the API, which checks SQLite, and comes back.
 	useEffect(() => {
 		if (!canAnimate || reducedMotion) return;
 		let cancelled = false;
 		let controls: ReturnType<typeof animate> | undefined;
+		const ease = [0.45, 0, 0.55, 1] as const;
+		const move = async (value: MotionValue<number>, to: number, duration: number) => {
+			controls = animate(value, to, { duration, ease });
+			await controls;
+		};
 		(async () => {
-			progress.set(0);
+			pageProgress.set(0);
+			apiProgress.set(0);
+			dbProgress.set(0);
 			await sleep(run === 0 ? 0.7 : 0.15);
 			if (cancelled) return;
 			setStage('out');
-			controls = animate(progress, 1, { duration: durations[0], ease: [0.45, 0, 0.55, 1] });
-			await controls;
+			await move(pageProgress, 1, durations[0]);
 			if (cancelled) return;
 			setStage('server');
 			await sleep(durations[1]);
 			if (cancelled) return;
 			setStage('in');
-			controls = animate(progress, 0, { duration: durations[2], ease: [0.45, 0, 0.55, 1] });
-			await controls;
+			await move(pageProgress, 0, durations[2]);
+			if (cancelled) return;
+
+			const result = await healthRequest.current;
+			if (cancelled) return;
+			if (result.kind === 'ok') {
+				const oneWay = clamp((result.ms / 2) * secondsPerMs, MIN_STEP_SECONDS, MAX_API_STEP_SECONDS);
+				setStage('api-out');
+				await move(apiProgress, 1, oneWay);
+				if (cancelled) return;
+				setStage('db');
+				await move(dbProgress, 1, 0.3);
+				if (cancelled) return;
+				await move(dbProgress, 0, 0.3);
+				if (cancelled) return;
+				setStage('api-in');
+				await move(apiProgress, 0, oneWay);
+			}
 			if (!cancelled) setStage('done');
 		})();
 		return () => {
@@ -93,8 +137,38 @@ export function LiveFlow({
 
 	// Without an animation to play (no timing, a cached page, reduced motion) the trip is shown finished.
 	const shownStage: Stage = trace !== undefined && (!canAnimate || reducedMotion) ? 'done' : stage;
-	const moving = shownStage === 'out' || shownStage === 'in';
 	const done = shownStage === 'done';
+	const pageDone = done || shownStage.startsWith('api') || shownStage === 'db';
+
+	const apiState = health === undefined ? 'pending' : health.kind;
+	const databaseOk = health?.kind === 'ok' && health.health.database === 'ok';
+	// The API's numbers appear once its packet is back (or straight away without animation).
+	const showApi = done || shownStage === 'db' || shownStage === 'api-in' || !canAnimate || Boolean(reducedMotion);
+
+	const pageLabel = trace === null ? t.notMeasured : pageDone && trace ? formatMs(trace.totalMs) : t.measuring;
+	const apiLabel =
+		apiState === 'ok' && showApi && health?.kind === 'ok'
+			? formatMs(health.ms)
+			: apiState === 'offline'
+				? t.offline
+				: apiState === 'none'
+					? ''
+					: t.asking;
+	const dbLabel =
+		health?.kind === 'ok' && showApi
+			? databaseOk
+				? health.health.database_ms !== undefined
+					? formatDbMs(health.health.database_ms)
+					: t.ok
+				: t.offline
+			: '';
+
+	const live: Record<NodeId, boolean> = {
+		you: true,
+		cdn: true,
+		api: apiState === 'ok',
+		db: databaseOk,
+	};
 
 	return (
 		<section aria-labelledby="flow-title" className="mt-20 md:mt-28">
@@ -105,38 +179,87 @@ export function LiveFlow({
 				<p className="text-sm text-quiet">{t.hint}</p>
 			</div>
 
-			<ol className="mt-8 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(2.5rem,0.6fr)_minmax(0,1fr)_minmax(2.5rem,0.6fr)_minmax(0,1fr)_minmax(2.5rem,0.6fr)_minmax(0,1fr)]">
-				{nodes.map((node, index) => (
-					<FlowStep key={node.id}>
+			{/*
+			  Phones: one column, top to bottom. From md up: your browser on the left, branching
+			  to GitHub Pages (the page) on the first row and to the API, then SQLite, on the second.
+			*/}
+			<ol className="mt-8 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(3rem,0.6fr)_minmax(0,1fr)_minmax(3rem,0.6fr)_minmax(0,1fr)] md:grid-rows-2">
+				<li className="md:col-start-1 md:row-span-2 md:row-start-1 md:self-center">
+					<NodeButton id="you" t={t} index={0} live selected={selected === 'you'} reducedMotion={Boolean(reducedMotion)} onSelect={setSelected} />
+				</li>
+				<li className="contents">
+					<Edge
+						className="md:col-start-2 md:row-start-1"
+						branch="top"
+						live
+						label={pageLabel}
+						progress={pageProgress}
+						moving={shownStage === 'out' || shownStage === 'in'}
+						index={0}
+						reducedMotion={Boolean(reducedMotion)}
+					/>
+					<div className="md:col-start-3 md:row-start-1 md:self-center md:py-3">
 						<NodeButton
-							node={node}
+							id="cdn"
 							t={t}
-							index={index}
-							selected={selected === node.id}
-							busy={node.id === 'cdn' && shownStage === 'server'}
+							index={1}
+							live
+							busy={shownStage === 'server'}
+							selected={selected === 'cdn'}
 							reducedMotion={Boolean(reducedMotion)}
-							onSelect={() => setSelected(node.id)}
+							onSelect={setSelected}
 						/>
-						{index < nodes.length - 1 && (
-							<Edge
-								live={node.live && nodes[index + 1].live}
-								label={
-									node.id === 'you'
-										? trace === null
-											? t.notMeasured
-											: done && trace
-												? formatMs(trace.totalMs)
-												: t.measuring
-										: t.next
-								}
-								progress={node.id === 'you' ? progress : undefined}
-								moving={node.id === 'you' && moving}
-								index={index}
-								reducedMotion={Boolean(reducedMotion)}
-							/>
-						)}
-					</FlowStep>
-				))}
+					</div>
+				</li>
+				<li className="contents">
+					<Edge
+						className="md:col-start-2 md:row-start-2"
+						branch="bottom"
+						live={live.api}
+						label={apiLabel}
+						mobilePrefix={apiLabel ? t.fromBrowser : undefined}
+						progress={apiProgress}
+						moving={shownStage === 'api-out' || shownStage === 'api-in'}
+						index={1}
+						reducedMotion={Boolean(reducedMotion)}
+					/>
+					<div className="md:col-start-3 md:row-start-2 md:self-center md:py-3">
+						<NodeButton
+							id="api"
+							t={t}
+							index={2}
+							live={live.api}
+							pending={apiState === 'pending'}
+							busy={shownStage === 'db'}
+							selected={selected === 'api'}
+							reducedMotion={Boolean(reducedMotion)}
+							onSelect={setSelected}
+						/>
+					</div>
+				</li>
+				<li className="contents">
+					<Edge
+						className="md:col-start-4 md:row-start-2"
+						live={live.db}
+						label={dbLabel}
+						progress={dbProgress}
+						moving={shownStage === 'db'}
+						index={2}
+						reducedMotion={Boolean(reducedMotion)}
+					/>
+					<div className="md:col-start-5 md:row-start-2 md:self-center md:py-3">
+						<NodeButton
+							id="db"
+							t={t}
+							index={3}
+							live={live.db}
+							pending={apiState === 'pending'}
+							selected={selected === 'db'}
+							reducedMotion={Boolean(reducedMotion)}
+							onSelect={setSelected}
+						/>
+					</div>
+				</li>
 			</ol>
 
 			<div className="mt-6 min-h-[13rem] rounded-2xl border border-rule bg-panel/60 p-5 md:p-7" aria-live="polite">
@@ -153,7 +276,7 @@ export function LiveFlow({
 								t={t}
 								lang={lang}
 								trace={trace}
-								done={done}
+								done={pageDone}
 								slowdown={canAnimate && !reducedMotion ? slowdown : 0}
 								onReplay={() => {
 									setSelected('you');
@@ -177,21 +300,18 @@ export function LiveFlow({
 								<p>{t.cdnWhy}</p>
 							</Details>
 						)}
-						{selected === 'api' && (
-							<Details title={t.apiTitle} badge={t.notLiveBadge}>
-								<p>{t.apiText}</p>
-								<p>
-									{t.apiWhen}{' '}
-									<Link href={localePath(lang, '/about/')} className="text-accent underline">
-										{t.apiWhy}
-									</Link>
-								</p>
-							</Details>
-						)}
+						{selected === 'api' && <ApiDetails t={t} lang={lang} health={health} />}
 						{selected === 'db' && (
-							<Details title={t.dbTitle} badge={t.notLiveBadge}>
+							<Details title={t.dbTitle} badge={health?.kind === 'offline' || (health?.kind === 'ok' && !databaseOk) ? t.offlineBadge : undefined}>
 								<p>
 									{t.dbBefore} <span className="text-ink">VACUUM INTO</span>, {t.dbAfter}
+								</p>
+								<p>
+									{health?.kind === 'ok'
+										? databaseOk
+											? t.dbChecked(health.health.database_ms !== undefined ? formatDbMs(health.health.database_ms) : null)
+											: t.dbUnavailable
+										: t.dbUnknown}
 								</p>
 							</Details>
 						)}
@@ -202,39 +322,94 @@ export function LiveFlow({
 	);
 }
 
-// Each list item holds a node and the edge after it; `contents` lets both sit in the parent grid.
-function FlowStep({ children }: { children: React.ReactNode }) {
-	return <li className="contents">{children}</li>;
+function ApiDetails({ t, lang, health }: { t: FlowText; lang: Lang; health: HealthResult | undefined }) {
+	const why = (
+		<Link href={localePath(lang, '/about/')} className="text-accent underline">
+			{t.apiWhy}
+		</Link>
+	);
+	if (health === undefined) {
+		return (
+			<Details title={t.apiAskingTitle}>
+				<p>{t.apiAskingText}</p>
+			</Details>
+		);
+	}
+	if (health.kind === 'none') {
+		return (
+			<Details title={t.apiNoneTitle}>
+				<p>{t.apiNoneText}</p>
+			</Details>
+		);
+	}
+	if (health.kind === 'offline') {
+		return (
+			<Details title={t.apiOfflineTitle} badge={t.offlineBadge}>
+				<p>{t.apiOfflineText}</p>
+				<p>{why}</p>
+			</Details>
+		);
+	}
+
+	const locale = lang === 'es' ? 'es-CO' : 'en-US';
+	const number = (value: number, digits = 0) => value.toLocaleString(locale, { maximumFractionDigits: digits });
+	const { host, uptime_seconds } = health.health;
+	const facts = [
+		t.apiAnswered(formatMs(health.ms)),
+		host.uptime_seconds !== null && t.laptopUp(formatDuration(host.uptime_seconds, lang)),
+		host.load && t.load(number(host.load[0], 2)),
+		host.memory_mb && t.memory(number(host.memory_mb.total - host.memory_mb.available), number(host.memory_mb.total)),
+		t.apiUp(formatDuration(uptime_seconds, lang)),
+	].filter((fact): fact is string => Boolean(fact));
+
+	return (
+		<Details title={t.apiTitle}>
+			<p>{t.apiText}</p>
+			<ul className="grid gap-1.5 text-sm sm:grid-cols-2">
+				{facts.map((fact) => (
+					<li key={fact} className="flex items-center gap-2.5 text-ink">
+						<span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-accent" />
+						<span className="tabular-nums">{fact}</span>
+					</li>
+				))}
+			</ul>
+			<p>{why}</p>
+		</Details>
+	);
 }
 
 function NodeButton({
-	node,
+	id,
 	t,
 	index,
+	live,
+	pending = false,
+	busy = false,
 	selected,
-	busy,
 	reducedMotion,
 	onSelect,
 }: {
-	node: (typeof nodes)[number];
+	id: NodeId;
 	t: FlowText;
 	index: number;
+	live: boolean;
+	pending?: boolean;
+	busy?: boolean;
 	selected: boolean;
-	busy: boolean;
 	reducedMotion: boolean;
-	onSelect: () => void;
+	onSelect: (id: NodeId) => void;
 }) {
 	return (
 		<motion.button
 			type="button"
 			aria-pressed={selected}
-			onClick={onSelect}
+			onClick={() => onSelect(id)}
 			initial={reducedMotion ? false : { opacity: 0.3, y: 10 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ delay: 0.1 + index * 0.09, duration: 0.45, ease: [0.2, 0.7, 0.2, 1] }}
 			className={[
 				'relative w-full cursor-pointer rounded-xl border bg-panel px-4 py-3.5 text-left transition-[border-color,box-shadow] duration-200',
-				node.live ? 'border-segment' : 'border-dashed border-segment',
+				live ? 'border-segment' : 'border-dashed border-segment',
 				selected ? 'border-solid !border-accent' : 'hover:border-quiet',
 				busy ? 'shadow-[0_0_0_4px_rgb(0_230_140/0.18)]' : '',
 			].join(' ')}
@@ -244,34 +419,52 @@ function NodeButton({
 					aria-hidden="true"
 					className={[
 						'size-2 shrink-0 rounded-full',
-						node.live ? 'bg-accent' : 'border border-quiet bg-transparent',
+						live ? 'bg-accent' : 'border border-quiet bg-transparent',
+						pending ? 'animate-pulse motion-reduce:animate-none' : '',
 					].join(' ')}
 				/>
-				<span className="font-display text-lg font-semibold leading-tight">{t.nodes[node.id].name}</span>
+				<span className="font-display text-lg font-semibold leading-tight">{t.nodes[id].name}</span>
 			</span>
-			<span className="mt-1 block pl-[1.125rem] text-sm leading-snug text-quiet">{t.nodes[node.id].place}</span>
-			{!node.live && <span className="sr-only">{t.notLiveSr}</span>}
+			<span className="mt-1 block pl-[1.125rem] text-sm leading-snug text-quiet">{t.nodes[id].place}</span>
+			{!live && !pending && <span className="sr-only">{t.offlineSr}</span>}
 		</motion.button>
 	);
 }
 
 function Edge({
+	className,
+	branch,
 	live,
 	label,
+	mobilePrefix,
 	progress,
 	moving,
 	index,
 	reducedMotion,
 }: {
+	className: string;
+	// From md up, the two edges leaving your browser share a vertical line on their left.
+	branch?: 'top' | 'bottom';
 	live: boolean;
 	label: string;
-	progress?: ReturnType<typeof useMotionValue<number>>;
+	mobilePrefix?: string;
+	progress: MotionValue<number>;
 	moving: boolean;
 	index: number;
 	reducedMotion: boolean;
 }) {
+	const line = live ? (moving ? 'bg-accent/50' : 'bg-segment') : '';
 	return (
-		<div className="relative h-14 md:h-auto md:min-h-[5.5rem]" aria-hidden="true">
+		<div className={`relative h-14 md:h-auto md:min-h-[5.5rem] ${className}`} aria-hidden="true">
+			{branch && (
+				<span
+					className={[
+						'absolute left-0 hidden w-0.5 md:block',
+						branch === 'top' ? 'top-1/2 bottom-0' : 'top-0 bottom-1/2',
+						live ? line : 'border-l border-dashed border-segment',
+					].join(' ')}
+				/>
+			)}
 			{/* the line: vertical on phones, horizontal from md up */}
 			<motion.span
 				initial={reducedMotion ? false : { scale: 0 }}
@@ -279,25 +472,24 @@ function Edge({
 				transition={{ delay: 0.2 + index * 0.09, duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}
 				className={[
 					'absolute left-[1.25rem] top-0 h-full origin-top md:left-0 md:top-1/2 md:h-0 md:w-full md:origin-left',
-					live
-						? `w-0.5 md:h-0.5 ${moving ? 'bg-accent/50' : 'bg-segment'}`
-						: 'w-0 border-l border-dashed border-segment md:border-l-0 md:border-t',
+					live ? `w-0.5 md:h-0.5 ${line}` : 'w-0 border-l border-dashed border-segment md:border-l-0 md:border-t',
 				].join(' ')}
 			/>
-			{progress && <Packet progress={progress} visible={moving} />}
+			<Packet progress={progress} visible={moving} />
 			<span
 				className={[
 					'absolute left-10 top-1/2 -translate-y-1/2 text-sm tabular-nums md:left-1/2 md:top-[calc(50%-1.75rem)] md:-translate-x-1/2 md:translate-y-0 md:whitespace-nowrap',
 					live ? 'text-ink' : 'text-quiet',
 				].join(' ')}
 			>
+				{mobilePrefix && <span className="md:hidden">{mobilePrefix}: </span>}
 				{label}
 			</span>
 		</div>
 	);
 }
 
-function Packet({ progress, visible }: { progress: ReturnType<typeof useMotionValue<number>>; visible: boolean }) {
+function Packet({ progress, visible }: { progress: MotionValue<number>; visible: boolean }) {
 	return (
 		<motion.span
 			style={{ '--p': progress } as unknown as CSSProperties}

@@ -108,10 +108,14 @@ const en = {
 			api: { name: 'API', place: 'A 2014 laptop working as a homelab' },
 			db: { name: 'SQLite', place: 'One file on that laptop' },
 		},
-		notLiveSr: '(not live yet)',
+		offlineSr: '(not answering right now)',
 		notMeasured: 'not measured',
 		measuring: 'measuring',
-		next: 'next',
+		asking: 'asking',
+		offline: 'offline',
+		ok: 'ok',
+		// Phones draw the steps in one column, so the API edge says where it starts.
+		fromBrowser: 'from your browser',
 		phases: {
 			browser: 'Your browser getting ready',
 			dns: 'Looking up the address',
@@ -140,23 +144,38 @@ const en = {
 		cdnAfter: 'after the linter, the type checker and the tests passed. Nothing runs on a server when you ask for it.',
 		cdnWhy:
 			'The pages live on a CDN instead of my laptop on purpose: they stay up when the power or the internet goes out at home.',
-		notLiveBadge: 'Not live yet',
-		apiTitle: 'Next: an API on a 2014 laptop',
+		offlineBadge: 'Offline',
+		apiTitle: 'An API on a 2014 laptop at my house',
 		apiText:
-			'A small FastAPI service will run on an ASUS X200MA with a Celeron and 2 GB of RAM, published with Tailscale Funnel so no ports are open on my home network. It will receive the contact form and report its own health.',
-		apiWhen: "When it's live, this step will show its real status.",
+			'A small FastAPI service runs on an ASUS X200MA with a Celeron and 2 GB of RAM, published with Tailscale Funnel so no ports are open on my home network. It receives the contact form, and your browser just asked it how it’s doing:',
+		apiAnswered: (ms: string) => `Answered your browser in ${ms}`,
+		laptopUp: (duration: string) => `Laptop up for ${duration}`,
+		apiUp: (duration: string) => `API running for ${duration}`,
+		load: (value: string) => `Load average ${value} on 2 cores`,
+		memory: (used: string, total: string) => `${used} of ${total} MB of RAM in use`,
+		apiAskingTitle: 'Asking the laptop',
+		apiAskingText: 'Your browser is calling the API right now.',
+		apiOfflineTitle: 'The laptop isn’t answering right now',
+		apiOfflineText:
+			'It may be off, or my home internet may be down. That’s why the pages live on a CDN: you’re reading them anyway. Until it’s back the contact form can’t send, but my email address still works.',
+		apiNoneTitle: 'This build has no API',
+		apiNoneText: 'It was built without an API address, so this step stays quiet.',
 		apiWhy: 'Why a laptop',
-		dbTitle: 'Next: one SQLite file',
+		dbTitle: 'One SQLite file',
 		// Around the words VACUUM INTO, which the page sets apart.
 		dbBefore:
-			'It will store contact messages and nothing else. No database server competing for 2 GB of RAM, and backups taken with',
+			'It stores contact messages and nothing else. No database server competing for 2 GB of RAM, and backups taken with',
 		dbAfter: "because copying a live database file isn't safe.",
+		dbChecked: (ms: string | null) =>
+			ms ? `The health check your browser just made reached it in ${ms}.` : 'The health check your browser just made reached it.',
+		dbUnavailable: 'The API is up, but it couldn’t reach the database just now.',
+		dbUnknown: 'It sits behind the API, so its state shows once the API answers.',
 	},
 	about: {
 		title: 'About this site',
 		description:
 			'How this site is built: Next.js pages on a CDN, a small API on a 2014 laptop, and the trade-offs behind each decision.',
-		heading: 'The pages come from a CDN. The API will come from a 2014 laptop.',
+		heading: 'The pages come from a CDN. The API comes from a 2014 laptop.',
 		laptop: 'The laptop is an ASUS X200MA with a Celeron N2830, 2 GB of RAM and a 500 GB hard drive.',
 		intro:
 			'This site is a working example of how I think about software: start from the real constraints, choose the simplest thing that fits and be honest about what each choice costs. The pages went to a free host, because a laptop at home is a poor place for the part a recruiter opens first. The backend goes on the laptop, where its limits are worth showing.',
@@ -172,7 +191,7 @@ const en = {
 		decisions: [
 			{
 				title: 'Pages on a CDN, the API on a laptop',
-				text: 'The pages are plain files on GitHub Pages. Only the small API will run on the laptop at home.',
+				text: 'The pages are plain files on GitHub Pages. Only the small API runs on the laptop at home.',
 				pro: 'The portfolio stays up when the power or the internet goes out at home. Only the API goes down with it.',
 				con: 'Two places to operate instead of one, and the API has to accept requests from another origin.',
 			},
@@ -190,7 +209,7 @@ const en = {
 			},
 			{
 				title: 'SQLite, not Postgres',
-				text: 'The only data will be contact messages, stored in a database file used by this site alone.',
+				text: 'The only data is contact messages, stored in a database file used by this site alone.',
 				pro: 'No database server competing for 2 GB of RAM.',
 				con: 'One writer at a time and a single machine. Backups need care, because copying a live file is not safe.',
 			},
@@ -306,10 +325,13 @@ const es: Dictionary = {
 			api: { name: 'API', place: 'Un laptop de 2014 que uso como homelab' },
 			db: { name: 'SQLite', place: 'Un archivo en ese laptop' },
 		},
-		notLiveSr: '(aún no está activo)',
+		offlineSr: '(no responde en este momento)',
 		notMeasured: 'sin medir',
 		measuring: 'midiendo',
-		next: 'próximo',
+		asking: 'consultando',
+		offline: 'sin conexión',
+		ok: 'ok',
+		fromBrowser: 'desde tu navegador',
 		phases: {
 			browser: 'Tu navegador preparándose',
 			dns: 'Buscando la dirección',
@@ -340,22 +362,39 @@ const es: Dictionary = {
 			'después de que pasaran el linter, el chequeo de tipos y los tests. Nada se ejecuta en un servidor cuando la pides.',
 		cdnWhy:
 			'Las páginas viven en una CDN y no en mi laptop a propósito: siguen en línea aunque en mi casa se vaya la luz o el internet.',
-		notLiveBadge: 'Aún no está activo',
-		apiTitle: 'Próximo: una API en un laptop de 2014',
+		offlineBadge: 'Sin conexión',
+		apiTitle: 'Una API en un laptop de 2014 en mi casa',
 		apiText:
-			'Un pequeño servicio FastAPI correrá en un ASUS X200MA con un Celeron y 2 GB de RAM, publicado con Tailscale Funnel para no abrir puertos en mi red de casa. Recibirá el formulario de contacto y reportará su propio estado.',
-		apiWhen: 'Cuando esté activo, este paso mostrará su estado real.',
+			'Un pequeño servicio FastAPI corre en un ASUS X200MA con un Celeron y 2 GB de RAM, publicado con Tailscale Funnel para no abrir puertos en mi red de casa. Recibe el formulario de contacto, y tu navegador acaba de preguntarle cómo está:',
+		apiAnswered: (ms: string) => `Le respondió a tu navegador en ${ms}`,
+		laptopUp: (duration: string) => `Laptop encendido hace ${duration}`,
+		apiUp: (duration: string) => `API corriendo hace ${duration}`,
+		load: (value: string) => `Carga promedio de ${value} en 2 núcleos`,
+		memory: (used: string, total: string) => `${used} de ${total} MB de RAM en uso`,
+		apiAskingTitle: 'Consultando al laptop',
+		apiAskingText: 'Tu navegador está llamando a la API en este momento.',
+		apiOfflineTitle: 'El laptop no responde en este momento',
+		apiOfflineText:
+			'Puede estar apagado, o puede que se haya caído el internet de mi casa. Por eso las páginas viven en una CDN: igual las estás leyendo. Mientras vuelve, el formulario de contacto no puede enviar, pero mi correo sigue funcionando.',
+		apiNoneTitle: 'Esta versión no tiene API',
+		apiNoneText: 'Se compiló sin la dirección de la API, así que este paso no muestra datos.',
 		apiWhy: 'Por qué un laptop',
-		dbTitle: 'Próximo: un archivo SQLite',
+		dbTitle: 'Un archivo SQLite',
 		dbBefore:
-			'Guardará los mensajes de contacto y nada más. Sin un servidor de base de datos compitiendo por 2 GB de RAM, y con backups hechos con',
+			'Guarda los mensajes de contacto y nada más. Sin un servidor de base de datos compitiendo por 2 GB de RAM, y con backups hechos con',
 		dbAfter: 'porque copiar el archivo de una base de datos en uso no es seguro.',
+		dbChecked: (ms: string | null) =>
+			ms
+				? `La revisión de estado que acaba de hacer tu navegador llegó hasta él en ${ms}.`
+				: 'La revisión de estado que acaba de hacer tu navegador llegó hasta él.',
+		dbUnavailable: 'La API responde, pero en este momento no pudo llegar a la base de datos.',
+		dbUnknown: 'Está detrás de la API, así que su estado aparece cuando la API responde.',
 	},
 	about: {
 		title: 'Sobre este sitio',
 		description:
 			'Cómo está hecho este sitio: páginas de Next.js en una CDN, una pequeña API en un laptop de 2014 y los pros y contras de cada decisión.',
-		heading: 'Las páginas vienen de una CDN. La API vendrá de un laptop de 2014.',
+		heading: 'Las páginas vienen de una CDN. La API viene de un laptop de 2014.',
 		laptop: 'El laptop es un ASUS X200MA con un Celeron N2830, 2 GB de RAM y un disco duro de 500 GB.',
 		intro:
 			'Este sitio es un ejemplo práctico de cómo pienso el software: partir de las restricciones reales, elegir lo más simple que funcione y ser honesto sobre lo que cuesta cada decisión. Las páginas fueron a un hosting gratuito, porque un laptop en casa es un mal lugar para lo primero que abre un reclutador. El backend va en el laptop, donde vale la pena mostrar sus límites.',
@@ -371,7 +410,7 @@ const es: Dictionary = {
 		decisions: [
 			{
 				title: 'Páginas en una CDN, la API en un laptop',
-				text: 'Las páginas son archivos simples en GitHub Pages. Solo la pequeña API correrá en el laptop de mi casa.',
+				text: 'Las páginas son archivos simples en GitHub Pages. Solo la pequeña API corre en el laptop de mi casa.',
 				pro: 'El portafolio sigue en línea aunque en mi casa se vaya la luz o el internet. Solo la API se cae con ellos.',
 				con: 'Son dos lugares que operar en vez de uno, y la API tiene que aceptar solicitudes de otro origen.',
 			},
@@ -389,7 +428,7 @@ const es: Dictionary = {
 			},
 			{
 				title: 'SQLite, no Postgres',
-				text: 'Los únicos datos serán los mensajes de contacto, guardados en un archivo de base de datos que solo usa este sitio.',
+				text: 'Los únicos datos son los mensajes de contacto, guardados en un archivo de base de datos que solo usa este sitio.',
 				pro: 'Ningún servidor de base de datos compitiendo por 2 GB de RAM.',
 				con: 'Un solo escritor a la vez y una sola máquina. Los backups requieren cuidado, porque copiar un archivo en uso no es seguro.',
 			},

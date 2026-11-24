@@ -13,6 +13,7 @@ def test_health_reports_the_laptop_without_identifying_it(client: TestClient) ->
     assert response.headers["cache-control"] == "no-store"
     body = response.json()
     assert body["status"] == "ok"
+    assert isinstance(body["database_ms"], float) and body["database_ms"] >= 0
     assert set(body["host"]) == {"uptime_seconds", "load", "memory_mb"}
     text = response.text.lower()
     for leak in ("hostname", "version", "/data", "127.0.0.1"):

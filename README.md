@@ -47,7 +47,7 @@ flowchart LR
 
 ## What's worth a look
 
-- **The hero animation is real data.** It replays the visitor's own request, timed by the browser's Navigation Timing API ([`frontend/components/live-flow.tsx`](frontend/components/live-flow.tsx)).
+- **The hero animation is real data.** It replays the visitor's own request for the page, timed by the browser's Navigation Timing API, then asks the API on the laptop how it's doing and shows its latency, uptime, load and memory. When the laptop is off, it says so ([`frontend/components/live-flow.tsx`](frontend/components/live-flow.tsx)).
 - **The API fits in about 60 MB.** It is one worker with an in-memory rate limit, a honeypot, a 16 KB body cap, CORS for the site only, and no IPs stored ([`api/app/main.py`](api/app/main.py)).
 - **Save first, notify after.** A failed email never loses a message, and failures explain themselves in the log ([`api/app/notify.py`](api/app/notify.py)).
 - **The site checks itself.** The tests run against the exported HTML: every internal link resolves, every page has its own Open Graph tags, and no phone number is ever published ([`frontend/tests/build.test.ts`](frontend/tests/build.test.ts)).

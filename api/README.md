@@ -4,7 +4,7 @@ FastAPI service behind the contact form, running on a 2014 laptop with 2 GB of R
 
 | Endpoint | What it does |
 | --- | --- |
-| `GET /api/health` | `ok` or `degraded`, the API's uptime, and the laptop's uptime, load and memory. Nothing that identifies the machine. |
+| `GET /api/health` | `ok` or `degraded`, how long the SQLite check took (`database_ms`), the API's uptime, and the laptop's uptime, load and memory. The site's hero shows it to every visitor. Nothing that identifies the machine. |
 | `POST /api/contact` | Saves a message, then notifies n8n. Contract in `CLAUDE.md`. |
 | `GET /api/docs` | Interactive OpenAPI docs. |
 

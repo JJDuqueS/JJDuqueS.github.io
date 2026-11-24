@@ -118,12 +118,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/api/health", summary="Is the laptop up, and how busy is it")
     def health(response: Response) -> dict:
         response.headers["Cache-Control"] = "no-store"
+        checked = time.perf_counter()
         database_ok = db.is_healthy(settings.database_path)
+        database_ms = round((time.perf_counter() - checked) * 1000, 1)
         if not database_ok:
             response.status_code = 503
         return {
             "status": "ok" if database_ok else "degraded",
             "database": "ok" if database_ok else "unavailable",
+            # How long the check took to reach SQLite; the site shows it on the database step.
+            "database_ms": database_ms,
             "uptime_seconds": int(time.monotonic() - started),
             "host": {
                 "uptime_seconds": system.host_uptime_seconds(),

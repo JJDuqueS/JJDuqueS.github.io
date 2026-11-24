@@ -46,7 +46,7 @@ describe('dictionaries', () => {
 			: value && typeof value === 'object'
 				? Object.entries(value).flatMap(([key, child]) => leaves(child, `${path}.${key}`))
 				: [];
-	const same = new Set(['.nav.resume', '.home.stack', '.projects.stack', '.flow.nodes.cdn.name', '.flow.nodes.api.name', '.flow.nodes.db.name', '.og.steps.1', '.og.steps.2', '.og.steps.3']);
+	const same = new Set(['.nav.resume', '.home.stack', '.projects.stack', '.flow.nodes.cdn.name', '.flow.nodes.api.name', '.flow.nodes.db.name', '.og.steps.1', '.og.steps.2', '.og.steps.3', '.flow.ok']);
 
 	it('translates every string', () => {
 		const es = new Map(leaves(dictionaries.es));

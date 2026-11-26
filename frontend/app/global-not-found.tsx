@@ -1,7 +1,6 @@
-import '@fontsource-variable/bricolage-grotesque/standard.css';
-import '@fontsource-variable/instrument-sans';
 import './globals.css';
 import type { Metadata } from 'next';
+import { display, sans } from '@/lib/fonts';
 
 /* eslint-disable @next/next/no-html-link-for-pages -- each home page has its own root layout, so a full page load is what happens anyway */
 
@@ -14,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function GlobalNotFound() {
 	return (
-		<html lang="en">
+		<html lang="en" className={`${display.variable} ${sans.variable}`}>
 			<body>
 				<main className="mx-auto max-w-6xl px-5 pt-24 sm:px-8 md:pt-32">
 					<h1 className="font-display text-6xl font-bold tracking-[-0.03em] [font-stretch:80%] md:text-8xl">

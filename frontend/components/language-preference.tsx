@@ -28,8 +28,9 @@ export function LanguagePreference({ lang }: { lang: Lang }) {
 	// Written in the language it offers.
 	const t = dictionaries[other].langHint;
 	return (
-		<div lang={other} role="region" aria-label={t.text} className="mx-auto mt-4 max-w-6xl px-5 sm:px-8">
-			<div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl border border-segment bg-panel px-5 py-3 text-sm">
+		// Floats over the page instead of pushing it down, so the layout doesn't shift when it appears.
+		<div lang={other} role="region" aria-label={t.text} className="fixed inset-x-0 bottom-4 z-40 mx-auto max-w-6xl px-4 sm:px-8">
+			<div className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl border border-segment bg-panel px-5 py-3 text-sm shadow-[0_12px_40px_rgb(0_0_0/0.55)]">
 				<p className="text-ink">{t.text}</p>
 				<div className="flex flex-wrap gap-3">
 					<a

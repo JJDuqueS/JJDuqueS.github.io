@@ -1,10 +1,9 @@
-import '@fontsource-variable/bricolage-grotesque/standard.css';
-import '@fontsource-variable/instrument-sans';
 import '@/app/globals.css';
 import type { Metadata, Viewport } from 'next';
 import { LanguagePreference } from '@/components/language-preference';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
+import { display, sans } from '@/lib/fonts';
 import { dictionaries, type Lang } from '@/lib/i18n';
 import { SITE_URL } from '@/lib/site';
 
@@ -23,7 +22,7 @@ export const rootViewport: Viewport = {
 
 export function RootShell({ lang, children }: { lang: Lang; children: React.ReactNode }) {
 	return (
-		<html lang={lang}>
+		<html lang={lang} className={`${display.variable} ${sans.variable}`}>
 			<body>
 				<a
 					href="#main"
